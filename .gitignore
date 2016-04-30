@@ -1,0 +1,6 @@
+.idea
+*.iml
+*.log
+target
+VERSION
+src/java/main/**/Version.java
