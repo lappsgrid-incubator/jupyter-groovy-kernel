@@ -35,13 +35,13 @@ class ShellSocket extends RouterSocket {
                 reply.content = [:]
                 reply.content.with {
                     protocol_version = '1.0.0'
-                    implementation = 'groovy'
+                    implementation = 'compiler'
                     implementation_version = '1.0.0'
                     language_info = [
                             name          : 'Groovy',
                             version       : '2.4.6',
-                            mimetype      : 'text/x-groovy',
-                            file_extension: 'groovy',
+                            mimetype      : 'text/x-compiler',
+                            file_extension: 'compiler',
                     ]
                     banner = 'Apache Groovy 2.4.6'
                 }
