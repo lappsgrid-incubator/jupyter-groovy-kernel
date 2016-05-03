@@ -1,14 +1,12 @@
 package org.lappsgrid.jupyter
 
-import com.sun.jersey.multipart.impl.MultiPartWriter
-import groovy.json.JsonOutput
 import org.apache.commons.codec.binary.Hex
 import org.lappsgrid.jupyter.handler.CompleteHandler
 import org.lappsgrid.jupyter.handler.ExecuteHandler
 import org.lappsgrid.jupyter.handler.HistoryHandler
 import org.lappsgrid.jupyter.handler.IHandler
 import org.lappsgrid.jupyter.handler.KernelInfoHandler
-import org.lappsgrid.serialization.Serializer
+import org.lappsgrid.jupyter.json.Serializer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.zeromq.ZMQ
@@ -16,6 +14,7 @@ import org.zeromq.ZMQ
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import java.security.InvalidKeyException
+import java.security.Signature
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
@@ -26,6 +25,7 @@ import static org.lappsgrid.jupyter.Message.Type.*
  */
 class GroovyKernel {
     private static final Logger logger = LoggerFactory.getLogger(GroovyKernel)
+    static final TimeZone UTC = TimeZone.getTimeZone('UTC')
 
     private volatile boolean running = false
 
@@ -44,19 +44,25 @@ class GroovyKernel {
     ZMQ.Socket iopubSocket
     ZMQ.Socket stdinSocket
 
-    static {
-        TimeZone zone = TimeZone.getTimeZone('UTC')
-        df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
-        df.setTimeZone(zone)
-    }
+//    static {
+//        TimeZone zone = TimeZone.getTimeZone('UTC')
+//        df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
+//        df.setTimeZone(zone)
+//    }
 
     public GroovyKernel() {
         id = uuid()
         installHandlers()
     }
 
-    static synchronized String timestamp() {
-        df.format(new Date())
+//    static synchronized String timestamp() {
+//        df.format(new Date())
+//    }
+
+    static String timestamp() {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
+        df.setTimeZone(UTC)
+        return df.format(new Date())
     }
 
     static String encode(Object object) {
@@ -158,12 +164,12 @@ class GroovyKernel {
 //        }
 //    }
 
-    void send(ZMQ.Socket socket, Message message) {
+    void _send(ZMQ.Socket socket, Message message) {
         logger.info("Sending message: {}", message.asJson())
-        String jsonContent = encode(message.content)
         String jsonHeader = encode(message.header)
         String jsonParent = encode(message.parentHeader)
         String jsonMetadata = encode(message.metadata)
+        String jsonContent = encode(message.content)
         List parts = [ jsonHeader, jsonParent, jsonMetadata, jsonContent ]
         String signature = sign(parts)
 
@@ -175,6 +181,22 @@ class GroovyKernel {
         socket.sendMore(jsonMetadata)
         socket.send(jsonContent)
         logger.debug("Message sent.")
+    }
+
+    void send(ZMQ.Socket socket, Message message) {
+        List parts = [
+                encode(message.header),
+                encode(message.parentHeader),
+                encode(message.metadata),
+                encode(message.content)
+        ]
+        String signature = sign(parts)
+
+        message.identities.each { socket.sendMore(it) }
+        socket.sendMore(DELIM)
+        socket.sendMore(signature)
+        3.times { i -> socket.sendMore(parts[i]) }
+        socket.send(parts[3])
     }
 
     void publish(Message message) {
@@ -216,15 +238,15 @@ class GroovyKernel {
                 identity = read(socket)
             }
             // Read the signature and the four blobs
-            String signature = read(socket)
+            String expectedSig = read(socket)
             byte[] header = socket.recv()
             byte[] parent = socket.recv()
             byte[] metadata = socket.recv()
             byte[] content = socket.recv()
 
-            // Make sure that the signatures match.
-            String sig = signBytes([header, parent, metadata, content])
-            if (signature != sig) {
+            // Make sure that the signatures match before proceeding.
+            String actualSig = signBytes([header, parent, metadata, content])
+            if (expectedSig != actualSig) {
                 throw RuntimeException("Signatures do not match.")
             }
 
@@ -469,7 +491,7 @@ class GroovyKernel {
         Thread.start {
             while (running) {
                 byte[] buffer = stdinSocket.recv()
-                logger.debug("Stdin: {}", new String(buffer))
+                logger.info("Stdin: {}", new String(buffer))
             }
         }
     }
@@ -531,8 +553,6 @@ class GroovyKernel {
         }
 
         GroovyKernel kernel = new GroovyKernel()
-        String json = file.text
-        println JsonOutput.prettyPrint(json)
         kernel.configuration = Serializer.parse(file.text, Config)
         kernel.run()
     }

@@ -3,7 +3,7 @@ package org.lappsgrid.jupyter
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
-import org.lappsgrid.annotation.processing.Serializer
+import org.lappsgrid.jupyter.json.Serializer
 
 /**
  * @author Keith Suderman

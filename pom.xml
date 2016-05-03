@@ -106,10 +106,47 @@
             <artifactId>ivy</artifactId>
             <version>${ivy.version}</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>org.lappsgrid</groupId>
             <artifactId>all</artifactId>
             <version>${lapps.all.version}</version>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>api</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>core</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>client</artifactId>
+            <version>2.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>discriminator</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>serialization</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>metadata</artifactId>
+            <version>1.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lappsgrid</groupId>
+            <artifactId>annotations</artifactId>
+            <version>1.0.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
