@@ -11,7 +11,7 @@ class Config {
     @JsonProperty('ip')
     String host
     @JsonProperty('signature_scheme')
-    String hmac
+    String scheme
     @JsonProperty('kernel_name')
     String name
     @JsonProperty('control_port')

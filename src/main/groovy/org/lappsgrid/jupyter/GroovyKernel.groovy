@@ -1,5 +1,6 @@
 package org.lappsgrid.jupyter
 
+import com.sun.jersey.multipart.impl.MultiPartWriter
 import groovy.json.JsonOutput
 import org.apache.commons.codec.binary.Hex
 import org.lappsgrid.jupyter.handler.CompleteHandler
@@ -54,7 +55,7 @@ class GroovyKernel {
         installHandlers()
     }
 
-    static String timestamp() {
+    static synchronized String timestamp() {
         df.format(new Date())
     }
 
@@ -90,11 +91,6 @@ class GroovyKernel {
                 is_complete_request: new CompleteHandler(this),
                 history_request: new HistoryHandler(this),
         ]
-//        handlers = new HashMap<String,IHandler>()
-//        handlers[EXECUTE_REQUEST] = new ExecuteHandler(this)
-//        handlers[KERNEL_INFO_REQUEST] = new KernelInfoHandler(this)
-//        handlers[COMPLETE_REQUEST] = new CompleteHandler(this)
-//        handlers[HISTORY_REQUEST] = new HistoryHandler(this)
     }
 
     String sign(List<String> msg) {
@@ -114,61 +110,52 @@ class GroovyKernel {
         }
     }
 
-    String sign(Message message) {
+    String signBytes(List<byte[]> msg) {
         if (!key || key == '') return ''
         logger.trace("Signing message with key {}", key)
         try {
             Mac mac = Mac.getInstance("HmacSHA256")
             SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
             mac.init(secretKeySpec)
-            mac.update(encode(message.header).bytes)
-            mac.update(encode(message.parentHeader).bytes)
-            mac.update(encode(message.metadata).bytes)
-            byte[] digest = mac.doFinal(encode(message.content).bytes)
+            msg.each {
+                mac.update(it)
+            }
+            byte[] digest = mac.doFinal()
             return asHex(digest)
         } catch (InvalidKeyException e) {
             throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
         }
     }
 
-    String sign(String msg) {
-        if (!key || key == '') return ''
-        logger.trace("Signing message with key {}", key)
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256")
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-            mac.init(secretKeySpec)
-            byte[] digest = mac.doFinal(msg.bytes)
-            return asHex(digest) //digest.encodeBase64().toString()
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-        }
-    }
+//    String sign(Message message) {
+//        if (!key || key == '') return ''
+//        logger.trace("Signing message with key {}", key)
+//        try {
+//            Mac mac = Mac.getInstance("HmacSHA256")
+//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
+//            mac.init(secretKeySpec)
+//            mac.update(encode(message.header).bytes)
+//            mac.update(encode(message.parentHeader).bytes)
+//            mac.update(encode(message.metadata).bytes)
+//            byte[] digest = mac.doFinal(encode(message.content).bytes)
+//            return asHex(digest)
+//        } catch (InvalidKeyException e) {
+//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+//        }
+//    }
 
-//    void send(Map params, ZMQ.Socket socket) { //, Map content=[:], Map parent = [:], Map metadata = [:], List<String> identities=[]) {
-//        List identities = params.identities ?: []
-//        Map content = params.content
-//        Header header = params.header
-//        Map metadata = params.metadata ?: [:]
-//        Header parent = params.parent ?: [:]
-//        logger.info("Sending message: {}", id)
-//        String jsonContent = encode(content)
-//        String jsonHeader = encode(header)
-//        String jsonParent = encode(parent)
-//        String jsonMetadata = encode(metadata)
-//        logger.debug("Header: {}", jsonHeader )
-//        logger.debug("Content: {}", jsonContent)
-//        List parts = [ jsonHeader, jsonParent, jsonMetadata, jsonContent ]
-//        String signature = sign(parts)
-//
-//        identities.each { socket.sendMore(it) }
-//        socket.sendMore(DELIM)
-//        socket.sendMore(signature)
-//        socket.sendMore(jsonHeader)
-//        socket.sendMore(jsonParent)
-//        socket.sendMore(jsonMetadata)
-//        socket.send(jsonContent)
-//        logger.debug("Message sent.")
+//    String sign(String msg) {
+//        if (!key || key == '') return ''
+//        logger.trace("Signing message with key {}", key)
+//        try {
+//            Mac mac = Mac.getInstance("HmacSHA256")
+//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
+//            mac.init(secretKeySpec)
+//            byte[] digest = mac.doFinal(msg.bytes)
+//            return asHex(digest) //digest.encodeBase64().toString()
+//        } catch (InvalidKeyException e) {
+//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+//        }
 //    }
 
     void send(ZMQ.Socket socket, Message message) {
@@ -177,8 +164,6 @@ class GroovyKernel {
         String jsonHeader = encode(message.header)
         String jsonParent = encode(message.parentHeader)
         String jsonMetadata = encode(message.metadata)
-//        logger.debug("Header: {}", jsonHeader )
-//        logger.debug("Content: {}", jsonContent)
         List parts = [ jsonHeader, jsonParent, jsonMetadata, jsonContent ]
         String signature = sign(parts)
 
@@ -210,70 +195,105 @@ class GroovyKernel {
     }
 
     String read(ZMQ.Socket socket) {
-        byte[] buffer = socket.recv()
-        String s = new String(buffer)
-        logger.debug("Socket read: {}", s)
-        return s
+        return new String(socket.recv())
     }
 
     public <T> T read(ZMQ.Socket socket, Class<T> theClass) {
         return Serializer.parse(read(socket), theClass)
     }
 
+    public <T> T parse(byte[] bytes, Class<T> theClass) {
+        return Serializer.parse(new String(bytes), theClass)
+    }
+
     Message readMessage(ZMQ.Socket socket) {
         Message message = new Message()
         try {
-            Mac mac = Mac.getInstance("HmacSHA256")
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-            mac.init(secretKeySpec)
+            // Read socket identities until we encounter the delimiter
             String identity = read(socket)
             while (DELIM != identity) {
                 message.identities << identity
                 identity = read(socket)
             }
+            // Read the signature and the four blobs
             String signature = read(socket)
+            byte[] header = socket.recv()
+            byte[] parent = socket.recv()
+            byte[] metadata = socket.recv()
+            byte[] content = socket.recv()
 
-            // header
-            byte[] buffer = socket.recv()
-            mac.update(buffer)
-            String json = new String(buffer)
-            logger.debug("Header: {}", json)
-            message.header = Serializer.parse(json, Header)
-
-            // parent header
-            buffer = socket.recv()
-            mac.update(buffer)
-            json = new String(buffer)
-            logger.debug("Parent: {}", json)
-            message.parentHeader = Serializer.parse(json, Header)
-
-            // metadata
-            buffer = socket.recv()
-            mac.update(buffer)
-            json = new String(buffer)
-            logger.debug("Metadata: {}", json)
-            message.metadata = Serializer.parse(json, LinkedHashMap)
-
-            // content
-            buffer = socket.recv()
-            mac.update(buffer)
-            json = new String(buffer)
-            logger.debug("Content: {}", json)
-            message.content = Serializer.parse(json, LinkedHashMap)
-
-            byte[] digest = mac.doFinal()
-            String sig = asHex(digest)
-            logger.trace("Expected Sig: {}", signature)
-            logger.trace("Actual Sig  : {}", sig)
-            if (sig != signature) {
-                logger.error("Invalid signature on message.")
-                throw new RuntimeException("Invalid signature on message.")
+            // Make sure that the signatures match.
+            String sig = signBytes([header, parent, metadata, content])
+            if (signature != sig) {
+                throw RuntimeException("Signatures do not match.")
             }
+
+            // Parse the byte buffers into the appropriate types
+            message.header = parse(header, Header)
+            message.parentHeader = parse(parent, Header)
+            message.metadata = parse(metadata, LinkedHashMap)
+            message.content = parse(content, LinkedHashMap)
+
         } catch (InvalidKeyException e) {
             throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
         }
         return message
     }
+
+//    Message readMessage(ZMQ.Socket socket) {
+//        Message message = new Message()
+//        try {
+//            Mac mac = Mac.getInstance("HmacSHA256")
+//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
+//            mac.init(secretKeySpec)
+//            String identity = read(socket)
+//            while (DELIM != identity) {
+//                message.identities << identity
+//                identity = read(socket)
+//            }
+//            String signature = read(socket)
+//
+//            // header
+//            byte[] buffer = socket.recv()
+//            mac.update(buffer)
+//            String json = new String(buffer)
+//            logger.debug("Header: {}", json)
+//            message.header = Serializer.parse(json, Header)
+//
+//            // parent header
+//            buffer = socket.recv()
+//            mac.update(buffer)
+//            json = new String(buffer)
+//            logger.debug("Parent: {}", json)
+//            message.parentHeader = Serializer.parse(json, Header)
+//
+//            // metadata
+//            buffer = socket.recv()
+//            mac.update(buffer)
+//            json = new String(buffer)
+//            logger.debug("Metadata: {}", json)
+//            message.metadata = Serializer.parse(json, LinkedHashMap)
+//
+//            // content
+//            buffer = socket.recv()
+//            mac.update(buffer)
+//            json = new String(buffer)
+//            logger.debug("Content: {}", json)
+//            message.content = Serializer.parse(json, LinkedHashMap)
+//
+//            byte[] digest = mac.doFinal()
+//            String sig = asHex(digest)
+//            logger.trace("Expected Sig: {}", signature)
+//            logger.trace("Actual Sig  : {}", sig)
+//            if (sig != signature) {
+//                logger.error("Invalid signature on message.")
+//                throw new RuntimeException("Invalid signature on message.")
+//            }
+//        } catch (InvalidKeyException e) {
+//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+//        }
+//        return message
+//    }
 
     Message _readMessage(ZMQ.Socket socket) {
         Message message = new Message()
@@ -297,7 +317,6 @@ class GroovyKernel {
         message.content = read(socket, LinkedHashMap)
         logger.trace("Read message: {}", message.asJson())
 
-//        List parts = [ encode([:]), encode([:]), encode([:]), message.payload ]
         String sig = sign(message)
         if (sig != signature) {
             logger.warn("Signatures do not match: {}", sig)

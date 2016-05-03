@@ -25,7 +25,7 @@ class Header {
         this.username = header.username
         this.session = header.session
         this.type = header.type
-        this.version = '5.0'
+        this.version = header.version
     }
 
     public Header(Map header) {
@@ -34,15 +34,19 @@ class Header {
         this.username = header.username
         this.session = header.session
         this.type = header.type
-        this.version = '5.0'
+        this.version = header.verion ?: '5.0'
     }
 
     public Header(String type, Message message) {
+        this(type, message.header.session)
+    }
+
+    public Header(String type, String session) {
         date = GroovyKernel.timestamp()
         id = GroovyKernel.uuid()
         username = 'kernel'
         this.type = type
-        this.session = message.header.session
+        this.session = session
         this.version = '5.0'
     }
 
