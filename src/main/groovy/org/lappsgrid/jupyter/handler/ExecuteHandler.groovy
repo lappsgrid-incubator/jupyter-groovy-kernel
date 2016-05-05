@@ -4,11 +4,11 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.lappsgrid.jupyter.BaseScript
 import org.lappsgrid.jupyter.GroovyKernel
-import org.lappsgrid.jupyter.Header
-import org.lappsgrid.jupyter.Message
+import org.lappsgrid.jupyter.msg.Header
+import org.lappsgrid.jupyter.msg.Message
 import org.slf4j.LoggerFactory
 
-import static org.lappsgrid.jupyter.Message.Type.*
+import static Message.Type.*
 
 /**
  * @author Keith Suderman
@@ -51,7 +51,9 @@ class ExecuteHandler extends AbstractHandler {
         try {
             logger.debug("Running: {}", code)
             Script script = compiler.parse(code)
+            logger.trace("code compiled")
             Object result = script.run()
+            logger.trace("Ran script")
             if (!result) {
                 result = 'Ok'
             }
@@ -74,6 +76,7 @@ class ExecuteHandler extends AbstractHandler {
             publish(reply)
         }
         catch (Exception e) {
+            e.printStackTrace()
             error = e
             reply.header = new Header(STREAM, message)
             reply.content = [

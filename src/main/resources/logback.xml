@@ -18,13 +18,14 @@
 		<file>/tmp/groovy-jupyter-kernel.log</file>
 	</appender>
 
-	<logger name="org.lappsgrid.jupyter" level="warn"/>
-	<logger name="org.lappsgrid.jupyter.GroovyKernel" level="warn"/>
+	<!--
+	<logger name="org.lappsgrid.jupyter" level="debug"/>
 	<logger name="org.lappsgrid.jupyter.handler.CompleteHandler" level="trace"/>
-	<logger name="org.lappsgrid.jupyter.handler.ExecuteHandler" level="warn"/>
+	<logger name="org.lappsgrid.jupyter.handler.ExecuteHandler" level="debug"/>
     <logger name="org.lappsgrid.jupyter.GalaxyClient" level="trace"/>
-
-	<root level="info">
+	-->
+	<logger name="org.lappsgrid.jupyter.GroovyKernel" level="debug"/>
+	<root level="trace">
 		<appender-ref ref="FILE" />
 		<!-- <appender-ref ref="FILE"/>  -->
 	</root>

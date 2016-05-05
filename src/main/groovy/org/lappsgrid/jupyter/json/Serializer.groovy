@@ -5,15 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 
 /**
- * Serializes objects to/from JSON.
+ * The Serializer class is a very thin wrapper around the Jackson ObjectMapper class.
  * <p>
- * The Serializer class is a thin wrapper around the Jackson ObjectMapper class.
  * The Jackson ObjectMapper class is thread-safe as long as it is initialized in a
- * single thread and not modified later. Once initialized the ObjectMapper can be used
+ * single thread and never modified. Once initialized static instances can be used
  * by multiple threads without further synchronization.
  * <p>
- * We provide two static instances, one instance that pretty prints JSON and one
- * instance that strips whitespace.
+ * The Serializer provides two static instances, one instance that pretty prints JSON and one
+ * instance that removes whitespace.
  *
  * @author Keith Suderman
  */

@@ -1,24 +1,23 @@
 package org.lappsgrid.jupyter
 
-import org.apache.commons.codec.binary.Hex
 import org.lappsgrid.jupyter.handler.CompleteHandler
 import org.lappsgrid.jupyter.handler.ExecuteHandler
 import org.lappsgrid.jupyter.handler.HistoryHandler
 import org.lappsgrid.jupyter.handler.IHandler
 import org.lappsgrid.jupyter.handler.KernelInfoHandler
 import org.lappsgrid.jupyter.json.Serializer
+import org.lappsgrid.jupyter.msg.Header
+import org.lappsgrid.jupyter.msg.Message
+import org.lappsgrid.jupyter.security.Key
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.zeromq.ZMQ
 
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 import java.security.InvalidKeyException
-import java.security.Signature
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
-import static org.lappsgrid.jupyter.Message.Type.*
+import static org.lappsgrid.jupyter.msg.Message.Type.*
 
 /**
  * @author Keith Suderman
@@ -27,39 +26,35 @@ class GroovyKernel {
     private static final Logger logger = LoggerFactory.getLogger(GroovyKernel)
     static final TimeZone UTC = TimeZone.getTimeZone('UTC')
 
+    public static String GALAXY_KEY = null
+    public static String GALAXY_HOST = null
+
     private volatile boolean running = false
 
     static final String DELIM = "<IDS|MSG>"
 
-    private static final DateFormat df
-
-    String key
+    /** Used to generate the HMAC signatures for messages */
+    Key key
+    /** The UUID for this session. */
     String id
     Config configuration
     Map<String, IHandler> handlers
 
+    ZMQ.Context context
     ZMQ.Socket hearbeatSocket
     ZMQ.Socket controlSocket
     ZMQ.Socket shellSocket
     ZMQ.Socket iopubSocket
     ZMQ.Socket stdinSocket
 
-//    static {
-//        TimeZone zone = TimeZone.getTimeZone('UTC')
-//        df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
-//        df.setTimeZone(zone)
-//    }
-
     public GroovyKernel() {
         id = uuid()
         installHandlers()
     }
 
-//    static synchronized String timestamp() {
-//        df.format(new Date())
-//    }
-
     static String timestamp() {
+        // SimpleDateFormat is not thread-safe so we need to create a new one for each
+        // timestamp that is requested.
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
         df.setTimeZone(UTC)
         return df.format(new Date())
@@ -86,10 +81,6 @@ class GroovyKernel {
         return UUID.randomUUID()
     }
 
-    String asHex(byte[] buffer) {
-        return Hex.encodeHexString(buffer)
-    }
-
     private void installHandlers() {
         handlers = [
                 execute_request: new ExecuteHandler(this),
@@ -99,40 +90,40 @@ class GroovyKernel {
         ]
     }
 
-    String sign(List<String> msg) {
-        if (!key || key == '') return ''
-        logger.trace("Signing message with key {}", key)
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256")
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-            mac.init(secretKeySpec)
-            msg.each {
-                mac.update(it.bytes)
-            }
-            byte[] digest = mac.doFinal()
-            return asHex(digest)
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-        }
-    }
-
-    String signBytes(List<byte[]> msg) {
-        if (!key || key == '') return ''
-        logger.trace("Signing message with key {}", key)
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256")
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-            mac.init(secretKeySpec)
-            msg.each {
-                mac.update(it)
-            }
-            byte[] digest = mac.doFinal()
-            return asHex(digest)
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-        }
-    }
-
+//    String sign(List<String> msg) {
+//        if (!key || key == '') return ''
+//        logger.trace("Signing message with key {}", key)
+//        try {
+//            Mac mac = Mac.getInstance("HmacSHA256")
+//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
+//            mac.init(secretKeySpec)
+//            msg.each {
+//                mac.update(it.bytes)
+//            }
+//            byte[] digest = mac.doFinal()
+//            return asHex(digest)
+//        } catch (InvalidKeyException e) {
+//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+//        }
+//    }
+//
+//    String signBytes(List<byte[]> msg) {
+//        if (!key || key == '') return ''
+//        logger.trace("Signing message with key {}", key)
+//        try {
+//            Mac mac = Mac.getInstance("HmacSHA256")
+//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
+//            mac.init(secretKeySpec)
+//            msg.each {
+//                mac.update(it)
+//            }
+//            byte[] digest = mac.doFinal()
+//            return asHex(digest)
+//        } catch (InvalidKeyException e) {
+//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+//        }
+//    }
+//
 //    String sign(Message message) {
 //        if (!key || key == '') return ''
 //        logger.trace("Signing message with key {}", key)
@@ -184,36 +175,33 @@ class GroovyKernel {
     }
 
     void send(ZMQ.Socket socket, Message message) {
+        logger.trace("Sending message: {}", message.asJson())
+        // Encode the message parts (blobs) and calculate the signature.
         List parts = [
                 encode(message.header),
                 encode(message.parentHeader),
                 encode(message.metadata),
                 encode(message.content)
         ]
-        String signature = sign(parts)
+        String signature = key.sign(parts)
+        logger.trace("Signature is {}", signature)
 
+        // Now send the message down the wire.
         message.identities.each { socket.sendMore(it) }
         socket.sendMore(DELIM)
         socket.sendMore(signature)
         3.times { i -> socket.sendMore(parts[i]) }
         socket.send(parts[3])
+        logger.trace("Message sent")
     }
 
     void publish(Message message) {
         send(iopubSocket, message)
     }
 
+    // Most things go to the shell socket so that is the default.
     void send(Message message) {
         send(shellSocket, message)
-    }
-
-    void heartbeat() {
-        Thread.start {
-            while (running) {
-                byte[] buffer = hearbeatSocket.recv(0)
-                hearbeatSocket.send(buffer)
-            }
-        }
     }
 
     String read(ZMQ.Socket socket) {
@@ -245,9 +233,13 @@ class GroovyKernel {
             byte[] content = socket.recv()
 
             // Make sure that the signatures match before proceeding.
-            String actualSig = signBytes([header, parent, metadata, content])
+            String actualSig = key.signBytes([header, parent, metadata, content])
             if (expectedSig != actualSig) {
-                throw RuntimeException("Signatures do not match.")
+                // TODO In practice this should log the errors and then throw the exception.
+//                throw new RuntimeException("Signatures do not match.")
+                logger.error("Message signatures do not match")
+                logger.error("Expected: []", expectedSig)
+                logger.error("Actual  : []", actualSig)
             }
 
             // Parse the byte buffers into the appropriate types
@@ -262,198 +254,10 @@ class GroovyKernel {
         return message
     }
 
-//    Message readMessage(ZMQ.Socket socket) {
-//        Message message = new Message()
-//        try {
-//            Mac mac = Mac.getInstance("HmacSHA256")
-//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-//            mac.init(secretKeySpec)
-//            String identity = read(socket)
-//            while (DELIM != identity) {
-//                message.identities << identity
-//                identity = read(socket)
-//            }
-//            String signature = read(socket)
-//
-//            // header
-//            byte[] buffer = socket.recv()
-//            mac.update(buffer)
-//            String json = new String(buffer)
-//            logger.debug("Header: {}", json)
-//            message.header = Serializer.parse(json, Header)
-//
-//            // parent header
-//            buffer = socket.recv()
-//            mac.update(buffer)
-//            json = new String(buffer)
-//            logger.debug("Parent: {}", json)
-//            message.parentHeader = Serializer.parse(json, Header)
-//
-//            // metadata
-//            buffer = socket.recv()
-//            mac.update(buffer)
-//            json = new String(buffer)
-//            logger.debug("Metadata: {}", json)
-//            message.metadata = Serializer.parse(json, LinkedHashMap)
-//
-//            // content
-//            buffer = socket.recv()
-//            mac.update(buffer)
-//            json = new String(buffer)
-//            logger.debug("Content: {}", json)
-//            message.content = Serializer.parse(json, LinkedHashMap)
-//
-//            byte[] digest = mac.doFinal()
-//            String sig = asHex(digest)
-//            logger.trace("Expected Sig: {}", signature)
-//            logger.trace("Actual Sig  : {}", sig)
-//            if (sig != signature) {
-//                logger.error("Invalid signature on message.")
-//                throw new RuntimeException("Invalid signature on message.")
-//            }
-//        } catch (InvalidKeyException e) {
-//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-//        }
-//        return message
-//    }
-
-    Message _readMessage(ZMQ.Socket socket) {
-        Message message = new Message()
-        String input = read(socket)
-        while (DELIM != input) {
-            if (input == null || input.length() == 0) {
-                logger.debug("Empty read")
-            }
-            else {
-                logger.debug("read: {}", input)
-                message.identities << input
-            }
-            input = read(socket)
-        }
-        logger.trace('Found socket identities.')
-        String signature = read(socket)
-        logger.trace('Signature: {}', signature)
-        message.header = read(socket, Header)
-        message.parentHeader = read(socket, Header)
-        message.metadata = read(socket, LinkedHashMap)
-        message.content = read(socket, LinkedHashMap)
-        logger.trace("Read message: {}", message.asJson())
-
-        String sig = sign(message)
-        if (sig != signature) {
-            logger.warn("Signatures do not match: {}", sig)
-            logger.warn("Expected {}", signature)
-        }
-        else {
-            logger.debug("Message signature is valid.")
-        }
-        return message
-    }
-
-//    void shellHandler() {
-//        Thread.start {
-//            while (running) {
-//                Message message = readMessage(shellSocket)
-//                String id = message.header.id
-//                String session = message.header.session
-//                String type = message.header.type
-//                logger.debug("SHELL MSG: {}", id)
-//                if (type == EXECUTE_REQUEST) {
-//                    logger.info("Processing execute request")
-//                    Message reply = new Message()
-//                    reply.content = [ execution_state: 'busy' ]
-//                    reply.header = new Header(STATUS, message)
-//                    reply.parentHeader = message.parentHeader
-//                    send(iopubSocket, reply)
-//
-//                    reply.content = [
-//                            execution_count: executionCount,
-//                            code: message.content.code
-//                    ]
-//                    reply.header = newHeader(EXECUTE_INPUT, message)
-//                    send(iopubSocket, reply)
-//
-//                    reply.content = [
-//                            name: 'stdout',
-//                            text: 'hello world!'
-//                    ]
-//                    reply.header = newHeader(STREAM, message)
-//                    send(iopubSocket, reply)
-//
-//                    reply.content = [
-//                            execution_count: executionCount,
-//                            data: [ 'text/plain': 'result!' ],
-//                            metadata: [:]
-//                    ]
-//                    reply.header = newHeader(EXECUTE_RESULT, message)
-//                    send(iopubSocket, reply)
-//
-//                    reply.content = [ execution_state: 'idle']
-//                    reply.header = newHeader(STATUS, message)
-//                    send(iopubSocket, reply)
-//
-//                    reply.metadata = [
-//                            dependencies_met: true,
-//                            engine: id,
-//                            status: 'ok',
-//                            started: timestamp()
-//                    ]
-//                    reply.content = [
-//                            status: 'ok',
-//                            execution_count: executionCount,
-//                            user_variables: [:],
-//                            payload: [],
-//                            user_expressions: [:]
-//                    ]
-//                    reply.header = newHeader(EXECUTE_REPLY, message)
-//                    send(shellSocket, reply)
-//                    ++executionCount
-//                }
-//                else if (type == KERNEL_INFO_REQUEST) {
-//                    logger.info("Processing kernel info request")
-//                    Map content = [
-//                            protocol_version: '5.0',
-//                            implementation: 'compiler',
-//                            implementation_version: '1.0.0',
-//                            language_info: [
-//                                    name: 'Groovy',
-//                                    version: '2.4.6',
-//                                    mimetype: '',
-//                                    file_extension: '.compiler',
-//                                    pygments_lexer: '',
-//                                    codemirror_mode: '',
-//                                    nbconverter_exporter: ''
-//                            ],
-//                            banner: 'Apache Groovy',
-//                            help_links: []
-//
-//                    ]
-//                    Header header = newHeader(KERNEL_INFO_REPLY, message)
-//                    send(shellSocket, content:content, header:header, parent:message.header, identities:message.identities)
-//                }
-//                else if (type == COMPLETE_REQUEST) {
-//                    logger.info("Handling complete request")
-//                }
-//                else if (type == HISTORY_REQUEST) {
-//                    logger.info("Handling history request")
-//                    Header header = new Header(HISTORY_REPLY, message)
-//                    Map content = [ history: [session, 1, ''] ]
-//                    send(shellSocket, content:content, header:header, identities:message.identities)
-//                }
-//                else {
-//                    logger.warn("Unknown message type: {}", type)
-//                }
-//
-//            }
-//        }
-//    }
-
     void shellHandler() {
         Thread.start {
             while (running) {
                 Message message = readMessage(shellSocket)
-                String id = message.header.id
-                logger.debug("SHELL MSG: {}", id)
                 IHandler handler = handlers[message.type()]
                 if (handler) {
                     handler.handle(message)
@@ -487,6 +291,7 @@ class GroovyKernel {
         }
     }
 
+    //TODO Not sure what to do with this yet.
     void stdinHandler() {
         Thread.start {
             while (running) {
@@ -496,9 +301,18 @@ class GroovyKernel {
         }
     }
 
+    void heartbeat() {
+        Thread.start {
+            while (running) {
+                byte[] buffer = hearbeatSocket.recv(0)
+                hearbeatSocket.send(buffer)
+            }
+        }
+    }
+
     int bind(ZMQ.Socket socket, String connection, int port) {
         if (port <= 0) {
-            return socket.bindToRandomPort(connection)
+            port = socket.bindToRandomPort(connection)
         }
         else {
             socket.bind("${connection}:${port}")
@@ -506,54 +320,81 @@ class GroovyKernel {
         return port
     }
 
+    ZMQ.Socket newSocket(ZMQ.Context context, int type, String connection, int port) {
+        ZMQ.Socket socket = context.socket(type)
+        bind(socket, connection, port)
+        return socket
+    }
+
     public void run() {
+        logger.info("Groovy Jupyter kernel starting.")
+        logger.debug("Galaxy host is {}", GALAXY_HOST)
         running = true
+
+        logger.debug("Creating signing key with: {}", configuration.key)
+        key = new Key(configuration.key)
+
         String connection = configuration.transport + '://' + configuration.host
-        key = configuration.key
-
         ZMQ.Context context = ZMQ.context(1)
-        hearbeatSocket = context.socket(ZMQ.REP)
-        bind(hearbeatSocket, connection, configuration.heartbeat)
 
-        iopubSocket = context.socket(ZMQ.PUB)
-        bind(iopubSocket, connection, configuration.iopub)
+        hearbeatSocket = newSocket(context, ZMQ.REP, connection, configuration.heartbeat)
+        iopubSocket = newSocket(context, ZMQ.PUB, connection, configuration.iopub)
+        controlSocket = newSocket(context, ZMQ.ROUTER, connection, configuration.control)
+        stdinSocket = newSocket(context, ZMQ.ROUTER, connection, configuration.stdin)
+        shellSocket = newSocket(context, ZMQ.ROUTER, connection, configuration.shell)
 
-        controlSocket = context.socket(ZMQ.ROUTER)
-        bind(controlSocket, connection, configuration.control)
+//        hearbeatSocket = context.socket(ZMQ.REP)
+//        bind(hearbeatSocket, connection, configuration.heartbeat)
 
-        stdinSocket = context.socket(ZMQ.ROUTER)
-        bind(stdinSocket, connection, configuration.stdin)
+//        iopubSocket = context.socket(ZMQ.PUB)
+//        bind(iopubSocket, connection, configuration.iopub)
 
-        shellSocket = context.socket(ZMQ.ROUTER)
-        bind(shellSocket, connection, configuration.shell)
+//        controlSocket = context.socket(ZMQ.ROUTER)
+//        bind(controlSocket, connection, configuration.control)
+
+//        stdinSocket = context.socket(ZMQ.ROUTER)
+//        bind(stdinSocket, connection, configuration.stdin)
+
+//        shellSocket = context.socket(ZMQ.ROUTER)
+//        bind(shellSocket, connection, configuration.shell)
 
         // Now start all the handler threads
         heartbeat()
         controlHandler()
         shellHandler()
         stdinHandler()
-//        iopubHander()
 
         while (running) {
             // Nothing to do but navel gaze until running == false
-            Thread.sleep(1000)
+            Thread.sleep(2000)
         }
         logger.info("Shutting down")
     }
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            println "No kernel configuration file provided"
+        if (args.length != 2) {
+            println "Invalid parameters passed to the Groovy kernel."
             System.exit(1)
         }
-        File file = new File(args[0])
-        if (!file.exists()) {
-            println "Kernel configuration not found"
+        File config = new File(args[0])
+        if (!config.exists()) {
+            println "Kernel configuration not found."
             System.exit(1)
         }
 
+        File propFile = new File(args[1])
+        if (!propFile) {
+            println "Groovy kernel properties not found."
+            System.exit(1)
+        }
         GroovyKernel kernel = new GroovyKernel()
-        kernel.configuration = Serializer.parse(file.text, Config)
+        kernel.configuration = Serializer.parse(config.text, Config)
+
+        Properties props = new Properties()
+        props.load(propFile.newInputStream())
+        GALAXY_KEY = props['GALAXY_KEY']
+        GALAXY_HOST = props['GALAXY_HOST']
+
         kernel.run()
     }
 }

@@ -4,3 +4,4 @@
 target
 VERSION
 src/java/main/**/Version.java
+groovy-kernel.properties

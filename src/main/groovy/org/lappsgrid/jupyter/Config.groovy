@@ -3,6 +3,7 @@ package org.lappsgrid.jupyter
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
+ * The Config class
  * @author Keith Suderman
  */
 class Config {

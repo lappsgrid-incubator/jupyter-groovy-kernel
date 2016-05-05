@@ -1,7 +1,7 @@
 package org.lappsgrid.jupyter.handler
 
 import org.lappsgrid.jupyter.GroovyKernel
-import org.lappsgrid.jupyter.Message
+import org.lappsgrid.jupyter.msg.Message
 
 /**
  * @author Keith Suderman

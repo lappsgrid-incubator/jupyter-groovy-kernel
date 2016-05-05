@@ -43,20 +43,23 @@ class GalaxyClient {
 
     File get(Integer hid) {
         logger.info("Getting history item {}", hid)
-        HistoryContents contents = histories.showHistoryContents(history.id).find { it.hid == hid }
+        List<HistoryContents> contentsList = histories.showHistoryContents(history.id)
+        logger.debug("History contains {} items", contentsList.size())
+        HistoryContents contents = contentsList.find { it.hid == hid }
         if (contents) {
             URL url = new URL(galaxy.galaxyUrl + contents.url + "?key=${galaxy.apiKey}")
+            logger.debug("GET {}", url)
             Map data = Serializer.parse(url.text, LinkedHashMap)
             File file = new File(data.file_name)
             if (!file.exists()) {
-                println "File not found."
-                file = null
+                logger.info("File not found.")
+                return null
             }
             logger.info("Found file {}", file.path)
             return file
         }
         else {
-            println "No such history item: ${hid}"
+            logger.info("No such history item: ${hid}")
             return null
         }
     }

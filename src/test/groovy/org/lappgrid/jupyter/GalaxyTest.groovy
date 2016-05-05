@@ -13,19 +13,22 @@ import org.lappsgrid.serialization.Serializer
  * @author Keith Suderman
  */
 class GalaxyTest {
-    static final String GALAXY_URL = "http://localhost:8000"
-    static final String GALAXY_USER = "suderman@cs.vassar.edu"
-    static final String API_KEY = System.getenv('GALAXY_KEY')
+//    static final String GALAXY_URL = "http://localhost:8000"
+//    static final String GALAXY_USER = "suderman@cs.vassar.edu"
+//    static final String API_KEY = System.getenv('GALAXY_KEY')
 
     GalaxyInstance galaxy;
     HistoriesClient client;
     History history
 
+    String HOST
+    String KEY
     void setup() {
-        if (!API_KEY) {
-            throw RuntimeException("No Galaxy API key available.")
-        }
-        galaxy = GalaxyInstanceFactory.get(GALAXY_URL, API_KEY)
+        Properties p = new Properties()
+        p.load(new File('groovy-kernel.properties').newInputStream())
+        HOST = p.GALAXY_HOST
+        KEY = p.GALAXY_KEY
+        galaxy = GalaxyInstanceFactory.get(HOST, KEY)
         client = galaxy.historiesClient
         history = client.histories.get(0)
     }
@@ -93,7 +96,9 @@ class GalaxyTest {
     }
 
     void client() {
-        GalaxyClient client = new GalaxyClient(GALAXY_URL, API_KEY)
+        setup()
+        GalaxyClient client = new GalaxyClient(HOST, KEY)
+//        setup()
         File file = client.get(64)
         println file.text
     }

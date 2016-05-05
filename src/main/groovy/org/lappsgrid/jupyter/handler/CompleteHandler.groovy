@@ -2,11 +2,11 @@ package org.lappsgrid.jupyter.handler
 
 import org.codehaus.groovy.control.CompilationFailedException
 import org.lappsgrid.jupyter.GroovyKernel
-import org.lappsgrid.jupyter.Header
-import org.lappsgrid.jupyter.Message
+import org.lappsgrid.jupyter.msg.Header
+import org.lappsgrid.jupyter.msg.Message
 import org.slf4j.LoggerFactory
 
-import static org.lappsgrid.jupyter.Message.Type.*
+import static Message.Type.*
 
 /**
  * @author Keith Suderman
