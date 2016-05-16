@@ -25,9 +25,13 @@ class GalaxyClient {
     public GalaxyClient(String url, String key) {
         galaxy = GalaxyInstanceFactory.get(url, key)
         if (galaxy) {
+            logger.debug("Creating Galaxy client for {}", url)
             histories = galaxy.historiesClient
             tools = galaxy.toolsClient
             history = histories.histories.get(0)
+        }
+        else {
+            logger.warn("Unable to connect to Galaxy instance.")
         }
     }
 
@@ -47,14 +51,16 @@ class GalaxyClient {
         logger.debug("History contains {} items", contentsList.size())
         HistoryContents contents = contentsList.find { it.hid == hid }
         if (contents) {
-            URL url = new URL(galaxy.galaxyUrl + contents.url + "?key=${galaxy.apiKey}")
+            URL url = new URL(galaxy.galaxyUrl + contents.url + "/display?key=${galaxy.apiKey}")
             logger.debug("GET {}", url)
-            Map data = Serializer.parse(url.text, LinkedHashMap)
-            File file = new File(data.file_name)
-            if (!file.exists()) {
-                logger.info("File not found.")
-                return null
-            }
+//            Map data = Serializer.parse(url.text, LinkedHashMap)
+            File file = File.createTempFile("groovy-kernel-", ".dat")
+            file.text = url.text
+//            File file = new File(data.file_name)
+//            if (!file.exists()) {
+//                logger.info("File not found: {}", data.file_name)
+//                return null
+//            }
             logger.info("Found file {}", file.path)
             return file
         }
@@ -63,5 +69,9 @@ class GalaxyClient {
             return null
         }
     }
+
+//    void foo() {
+//        history.
+//    }
 
 }

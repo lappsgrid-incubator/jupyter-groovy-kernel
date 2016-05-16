@@ -15,15 +15,15 @@
 			<pattern>%date %-5level [%class{0}.%M:%line] %msg%n</pattern>
 		</encoder>
 		<append>true</append>
-		<file>/tmp/groovy-jupyter-kernel.log</file>
+		<file>groovy-jupyter-kernel.log</file>
 	</appender>
 
 	<!--
 	<logger name="org.lappsgrid.jupyter" level="debug"/>
 	<logger name="org.lappsgrid.jupyter.handler.CompleteHandler" level="trace"/>
 	<logger name="org.lappsgrid.jupyter.handler.ExecuteHandler" level="debug"/>
-    <logger name="org.lappsgrid.jupyter.GalaxyClient" level="trace"/>
 	-->
+	<logger name="org.lappsgrid.jupyter.GalaxyClient" level="trace"/>
 	<logger name="org.lappsgrid.jupyter.GroovyKernel" level="debug"/>
 	<root level="trace">
 		<appender-ref ref="FILE" />

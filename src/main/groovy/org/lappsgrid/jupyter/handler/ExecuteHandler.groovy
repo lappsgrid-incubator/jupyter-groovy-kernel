@@ -51,6 +51,7 @@ class ExecuteHandler extends AbstractHandler {
         try {
             logger.debug("Running: {}", code)
             Script script = compiler.parse(code)
+            script.metaClass = getMetaClass(script.class)
             logger.trace("code compiled")
             Object result = script.run()
             logger.trace("Ran script")
@@ -152,6 +153,14 @@ class ExecuteHandler extends AbstractHandler {
         CompilerConfiguration configuration = new CompilerConfiguration()
         configuration.addCompilationCustomizers(customizer)
         return configuration
+    }
+
+    MetaClass getMetaClass(Class scriptClass) {
+        ExpandoMetaClass mc = new ExpandoMetaClass(scriptClass, false)
+        mc.print = { it?.toString() ?: '' }
+        mc.println = { it?.toString() ?: '' }
+        mc.initialize()
+        return mc
     }
 
 }

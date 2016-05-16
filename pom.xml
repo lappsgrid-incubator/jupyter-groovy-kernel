@@ -9,7 +9,7 @@
         <version>2.0.2</version>
     </parent>
     <groupId>org.lappsgrid.ipython</groupId>
-    <artifactId>groovy-kernel</artifactId>
+    <artifactId>jupyter-lsd-kernel</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <properties>
         <groovy.version>2.4.3</groovy.version>
@@ -76,7 +76,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <finalName>ipython-groovy-kernel-${project.version}</finalName>
+                    <finalName>${project.artifactId}-${project.version}</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>

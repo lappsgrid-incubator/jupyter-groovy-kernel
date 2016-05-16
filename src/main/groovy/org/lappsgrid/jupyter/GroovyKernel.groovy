@@ -40,7 +40,7 @@ class GroovyKernel {
     Config configuration
     Map<String, IHandler> handlers
 
-    ZMQ.Context context
+//    ZMQ.Context context
     ZMQ.Socket hearbeatSocket
     ZMQ.Socket controlSocket
     ZMQ.Socket shellSocket
@@ -54,7 +54,7 @@ class GroovyKernel {
 
     static String timestamp() {
         // SimpleDateFormat is not thread-safe so we need to create a new one for each
-        // timestamp that is requested.
+        // timestamp that is generated.
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ")
         df.setTimeZone(UTC)
         return df.format(new Date())
@@ -174,6 +174,15 @@ class GroovyKernel {
         logger.debug("Message sent.")
     }
 
+    void publish(Message message) {
+        send(iopubSocket, message)
+    }
+
+    // Most things go to the shell socket so that is the default.
+    void send(Message message) {
+        send(shellSocket, message)
+    }
+
     void send(ZMQ.Socket socket, Message message) {
         logger.trace("Sending message: {}", message.asJson())
         // Encode the message parts (blobs) and calculate the signature.
@@ -193,15 +202,6 @@ class GroovyKernel {
         3.times { i -> socket.sendMore(parts[i]) }
         socket.send(parts[3])
         logger.trace("Message sent")
-    }
-
-    void publish(Message message) {
-        send(iopubSocket, message)
-    }
-
-    // Most things go to the shell socket so that is the default.
-    void send(Message message) {
-        send(shellSocket, message)
     }
 
     String read(ZMQ.Socket socket) {
@@ -236,10 +236,10 @@ class GroovyKernel {
             String actualSig = key.signBytes([header, parent, metadata, content])
             if (expectedSig != actualSig) {
                 // TODO In practice this should log the errors and then throw the exception.
-//                throw new RuntimeException("Signatures do not match.")
                 logger.error("Message signatures do not match")
                 logger.error("Expected: []", expectedSig)
                 logger.error("Actual  : []", actualSig)
+                throw new RuntimeException("Signatures do not match.")
             }
 
             // Parse the byte buffers into the appropriate types
@@ -274,7 +274,7 @@ class GroovyKernel {
         Thread.start {
             while (running) {
                 Message message = readMessage(controlSocket)
-                String type = message.header.id
+                String type = message.header.type
                 if (type == SHUTDOWN_REQUEST) {
                     logger.info("Control handler received a shutdown request")
                     shutdown()
@@ -328,7 +328,8 @@ class GroovyKernel {
 
     public void run() {
         logger.info("Groovy Jupyter kernel starting.")
-        logger.debug("Galaxy host is {}", GALAXY_HOST)
+//        logger.debug("Galaxy host is {}", GALAXY_HOST)
+//        logger.debug("Galaxy API key is {}", GALAXY_KEY)
         running = true
 
         logger.debug("Creating signing key with: {}", configuration.key)
@@ -365,7 +366,8 @@ class GroovyKernel {
         stdinHandler()
 
         while (running) {
-            // Nothing to do but navel gaze until running == false
+            // Nothing to do but navel gaze until another thread sets
+            // running == false
             Thread.sleep(2000)
         }
         logger.info("Shutting down")
