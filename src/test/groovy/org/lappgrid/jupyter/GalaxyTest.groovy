@@ -6,7 +6,7 @@ import com.github.jmchilton.blend4j.galaxy.HistoriesClient
 import com.github.jmchilton.blend4j.galaxy.beans.History
 import com.github.jmchilton.blend4j.galaxy.beans.HistoryContents
 import com.github.jmchilton.blend4j.galaxy.beans.Library
-import org.lappsgrid.jupyter.GalaxyClient
+import org.lappsgrid.jupyter.lapps.GalaxyClient
 import org.lappsgrid.serialization.Serializer
 
 /**
@@ -50,7 +50,7 @@ class GalaxyTest {
 
     /*
     payload = {
-        'key'           : api_key,
+        'hmac'           : api_key,
         'tool_id'       : 'upload1',
         'history_id'    : history_id,
     }
@@ -80,7 +80,7 @@ class GalaxyTest {
 
         if (contents) {
             println contents.url
-            URL url = new URL(GALAXY_URL + contents.url + "?key=${API_KEY}")
+            URL url = new URL(GALAXY_URL + contents.url + "?hmac=${API_KEY}")
             Map data = Serializer.parse(url.text, LinkedHashMap)
             File file = new File(data.file_name)
             if (!file.exists()) {

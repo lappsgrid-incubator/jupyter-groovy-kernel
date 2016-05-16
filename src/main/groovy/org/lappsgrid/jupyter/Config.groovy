@@ -3,7 +3,9 @@ package org.lappsgrid.jupyter
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
- * The Config class
+ * The Config class is used to parse the connection information passed to the
+ * kernel from Jupyter.
+ *
  * @author Keith Suderman
  */
 class Config {

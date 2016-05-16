@@ -23,7 +23,7 @@
 	<logger name="org.lappsgrid.jupyter.handler.CompleteHandler" level="trace"/>
 	<logger name="org.lappsgrid.jupyter.handler.ExecuteHandler" level="debug"/>
 	-->
-	<logger name="org.lappsgrid.jupyter.GalaxyClient" level="trace"/>
+	<logger name="org.lappsgrid.jupyter.lapps.GalaxyClient" level="trace"/>
 	<logger name="org.lappsgrid.jupyter.GroovyKernel" level="debug"/>
 	<root level="trace">
 		<appender-ref ref="FILE" />

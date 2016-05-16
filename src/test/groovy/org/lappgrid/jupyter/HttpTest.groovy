@@ -2,7 +2,7 @@ package org.lappgrid.jupyter
 
 import com.github.jmchilton.blend4j.galaxy.ToolsClient
 import com.sun.jersey.api.client.ClientResponse
-import org.lappsgrid.jupyter.GalaxyClient
+import org.lappsgrid.jupyter.lapps.GalaxyClient
 
 /**
  * @author Keith Suderman
@@ -32,7 +32,7 @@ class HttpTest {
 //                'ajax_upload'   : 'true',
 //        ]
 //        Map payload = [
-//                key           : key,
+//                hmac           : hmac,
 //                tool_id       : 'upload1',
 //                history_id    : galaxy.history.id,
 //                inputs: Serializer.toJson(inputs)
