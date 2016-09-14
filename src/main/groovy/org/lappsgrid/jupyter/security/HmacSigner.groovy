@@ -9,20 +9,24 @@ import javax.crypto.spec.SecretKeySpec
 import java.security.InvalidKeyException
 
 /**
+ * Use this class to generate all HMAC (Hashed Message Authentication Codes) for
+ * messages with this class for consistency and simplicity.
+ *
+ *
  * @author Keith Suderman
  */
-class Key {
-    private static Logger logger = LoggerFactory.getLogger(Key)
+class HmacSigner {
+    private static Logger logger = LoggerFactory.getLogger(HmacSigner)
 
     private static final String TYPE = "HmacSHA256"
     private SecretKeySpec spec
 
-    public Key(String key) {
+    public HmacSigner(String key) {
         if (key == null) {
-            throw new NullPointerException("No key specified.")
+            throw new NullPointerException("No hmac specified.")
         }
 
-        logger.info("Using signing key: {}", key)
+        logger.info("Using signing hmac: {}", key)
         spec = new SecretKeySpec(key.bytes, TYPE)
     }
 
@@ -37,7 +41,7 @@ class Key {
             return asHex(digest)
         } catch (InvalidKeyException e) {
             logger.error("Unable to sign message", e)
-            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+            throw new RuntimeException("Invalid hmac exception while converting to HmacSHA256")
         }
     }
 
@@ -52,7 +56,7 @@ class Key {
             return asHex(digest)
         } catch (InvalidKeyException e) {
             logger.error("Unable to sign message", e)
-            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+            throw new RuntimeException("Invalid hmac exception while converting to HmacSHA256")
         }
     }
 

@@ -1,5 +1,7 @@
 package org.lappsgrid.jupyter
 
+import org.lappsgrid.jupyter.context.DefaultGroovyContext
+import org.lappsgrid.jupyter.context.GroovyContext
 import org.lappsgrid.jupyter.handler.CompleteHandler
 import org.lappsgrid.jupyter.handler.ExecuteHandler
 import org.lappsgrid.jupyter.handler.HistoryHandler
@@ -8,7 +10,7 @@ import org.lappsgrid.jupyter.handler.KernelInfoHandler
 import org.lappsgrid.jupyter.json.Serializer
 import org.lappsgrid.jupyter.msg.Header
 import org.lappsgrid.jupyter.msg.Message
-import org.lappsgrid.jupyter.security.Key
+import org.lappsgrid.jupyter.security.HmacSigner
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.zeromq.ZMQ
@@ -34,13 +36,21 @@ class GroovyKernel {
     static final String DELIM = "<IDS|MSG>"
 
     /** Used to generate the HMAC signatures for messages */
-    Key key
+    HmacSigner hmac
+
     /** The UUID for this session. */
     String id
+
+    /** Information from the connection file from Jupyter. */
     Config configuration
+
+    /** Message handlers. All sockets listeners will dispatch to these handlers. */
     Map<String, IHandler> handlers
 
-//    ZMQ.Context context
+    /** Used to configure the Groovy compiler when code needs to be compiled. */
+    GroovyContext context
+
+    // The sockets the kernel listens to.
     ZMQ.Socket hearbeatSocket
     ZMQ.Socket controlSocket
     ZMQ.Socket shellSocket
@@ -48,7 +58,12 @@ class GroovyKernel {
     ZMQ.Socket stdinSocket
 
     public GroovyKernel() {
+        this(new DefaultGroovyContext())
+    }
+
+    public GroovyKernel(GroovyContext context) {
         id = uuid()
+        this.context = context
         installHandlers()
     }
 
@@ -90,71 +105,6 @@ class GroovyKernel {
         ]
     }
 
-//    String sign(List<String> msg) {
-//        if (!key || key == '') return ''
-//        logger.trace("Signing message with key {}", key)
-//        try {
-//            Mac mac = Mac.getInstance("HmacSHA256")
-//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-//            mac.init(secretKeySpec)
-//            msg.each {
-//                mac.update(it.bytes)
-//            }
-//            byte[] digest = mac.doFinal()
-//            return asHex(digest)
-//        } catch (InvalidKeyException e) {
-//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-//        }
-//    }
-//
-//    String signBytes(List<byte[]> msg) {
-//        if (!key || key == '') return ''
-//        logger.trace("Signing message with key {}", key)
-//        try {
-//            Mac mac = Mac.getInstance("HmacSHA256")
-//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-//            mac.init(secretKeySpec)
-//            msg.each {
-//                mac.update(it)
-//            }
-//            byte[] digest = mac.doFinal()
-//            return asHex(digest)
-//        } catch (InvalidKeyException e) {
-//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-//        }
-//    }
-//
-//    String sign(Message message) {
-//        if (!key || key == '') return ''
-//        logger.trace("Signing message with key {}", key)
-//        try {
-//            Mac mac = Mac.getInstance("HmacSHA256")
-//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-//            mac.init(secretKeySpec)
-//            mac.update(encode(message.header).bytes)
-//            mac.update(encode(message.parentHeader).bytes)
-//            mac.update(encode(message.metadata).bytes)
-//            byte[] digest = mac.doFinal(encode(message.content).bytes)
-//            return asHex(digest)
-//        } catch (InvalidKeyException e) {
-//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-//        }
-//    }
-
-//    String sign(String msg) {
-//        if (!key || key == '') return ''
-//        logger.trace("Signing message with key {}", key)
-//        try {
-//            Mac mac = Mac.getInstance("HmacSHA256")
-//            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), "HmacSHA256")
-//            mac.init(secretKeySpec)
-//            byte[] digest = mac.doFinal(msg.bytes)
-//            return asHex(digest) //digest.encodeBase64().toString()
-//        } catch (InvalidKeyException e) {
-//            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
-//        }
-//    }
-
     void _send(ZMQ.Socket socket, Message message) {
         logger.info("Sending message: {}", message.asJson())
         String jsonHeader = encode(message.header)
@@ -192,7 +142,7 @@ class GroovyKernel {
                 encode(message.metadata),
                 encode(message.content)
         ]
-        String signature = key.sign(parts)
+        String signature = hmac.sign(parts)
         logger.trace("Signature is {}", signature)
 
         // Now send the message down the wire.
@@ -233,7 +183,7 @@ class GroovyKernel {
             byte[] content = socket.recv()
 
             // Make sure that the signatures match before proceeding.
-            String actualSig = key.signBytes([header, parent, metadata, content])
+            String actualSig = hmac.signBytes([header, parent, metadata, content])
             if (expectedSig != actualSig) {
                 logger.error("Message signatures do not match")
                 logger.error("Expected: []", expectedSig)
@@ -248,7 +198,7 @@ class GroovyKernel {
             message.content = parse(content, LinkedHashMap)
 
         } catch (InvalidKeyException e) {
-            throw new RuntimeException("Invalid key exception while converting to HmacSHA256")
+            throw new RuntimeException("Invalid hmac exception while converting to HmacSHA256")
         }
         return message
     }
@@ -328,11 +278,11 @@ class GroovyKernel {
     public void run() {
         logger.info("Groovy Jupyter kernel starting.")
 //        logger.debug("Galaxy host is {}", GALAXY_HOST)
-//        logger.debug("Galaxy API key is {}", GALAXY_KEY)
+//        logger.debug("Galaxy API hmac is {}", GALAXY_KEY)
         running = true
 
-        logger.debug("Creating signing key with: {}", configuration.key)
-        key = new Key(configuration.key)
+        logger.debug("Creating signing hmac with: {}", configuration.key)
+        hmac = new HmacSigner(configuration.key)
 
         String connection = configuration.transport + '://' + configuration.host
         ZMQ.Context context = ZMQ.context(1)

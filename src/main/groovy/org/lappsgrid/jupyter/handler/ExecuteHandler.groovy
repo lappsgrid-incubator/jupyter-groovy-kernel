@@ -1,8 +1,6 @@
 package org.lappsgrid.jupyter.handler
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.lappsgrid.jupyter.BaseScript
 import org.lappsgrid.jupyter.GroovyKernel
 import org.lappsgrid.jupyter.msg.Header
 import org.lappsgrid.jupyter.msg.Message
@@ -25,10 +23,9 @@ class ExecuteHandler extends AbstractHandler {
         logger = LoggerFactory.getLogger(ExecuteHandler)
         executionCount = 0
         binding = new Binding()
-        included = new HashSet<String>()
-
-        CompilerConfiguration configuration = getCompilerConfiguration()
-        configuration.scriptBaseClass = BaseScript.class.name
+//        CompilerConfiguration configuration = getCompilerConfiguration()
+//        configuration.scriptBaseClass = BaseScript.class.name
+        CompilerConfiguration configuration = kernel.context.getCompilerConfiguration()
         compiler = new GroovyShell(this.class.classLoader, binding, configuration)
     }
 
@@ -41,8 +38,10 @@ class ExecuteHandler extends AbstractHandler {
         reply.identities = message.identities
         publish(reply)
 
+        // Get the code to be executed from the message.
         String code = message.content.code.trim()
 
+        // Announce that we have the code.
         reply.header = new Header(EXECUTE_INPUT, message)
         reply.content = [
                 execution_count: executionCount,
@@ -50,16 +49,17 @@ class ExecuteHandler extends AbstractHandler {
         ]
         publish(reply)
 
+        // Now try compiling and running the code.
         Exception error = null
         try {
             logger.debug("Running: {}", code)
             Script script = compiler.parse(code)
-            script.metaClass = getMetaClass(script.class)
+            script.metaClass = kernel.context.getMetaClass(script.class)
             logger.trace("code compiled")
             Object result = script.run()
             logger.trace("Ran script")
             if (!result) {
-                result = 'Ok'
+                result = 'Cell returned null.'
             }
             ++executionCount
             logger.debug("Result is {}", result)
@@ -71,6 +71,7 @@ class ExecuteHandler extends AbstractHandler {
 //            ]
 //            publish(reply)
 
+            // Publish the result of the execution.
             reply.header = new Header(EXECUTE_RESULT, message)
             reply.content = [
                     execution_count: executionCount,
@@ -90,11 +91,14 @@ class ExecuteHandler extends AbstractHandler {
             publish(reply)
         }
 
-
+        // Tell Jupyter that this kernel is idle again.
         reply.header = new Header(STATUS, message)
         reply.content = [ execution_state: 'idle']
         publish(reply)
 
+        // Send the REPLY to the original message. This is NOT the result of
+        // executing the cell.  This is the equivalent of 'exit 0' or 'exit 1'
+        // at the end of a shell script.
         reply.header = new Header(EXECUTE_REPLY, message)
         reply.metadata = [
                 dependencies_met: true,
@@ -117,67 +121,4 @@ class ExecuteHandler extends AbstractHandler {
         }
         send(reply)
     }
-
-//    ClassLoader getLoader() {
-//        ClassLoader loader = Thread.currentThread().contextClassLoader;
-//        if (loader == null) {
-//            loader = this.class.classLoader
-//        }
-//        return loader
-//    }
-
-    CompilerConfiguration getCompilerConfiguration() {
-        ImportCustomizer customizer = new ImportCustomizer()
-        /*
-         * Custom imports can be defined in the ImportCustomizer.
-         * For example:
-         *   customizer.addImport("org.anc.xml.Parser")
-         *   customizer.addStarImports("org.anc.util")
-         *
-         * The jar files for any packages imported this way must be
-         * declared as Maven dependencies so they will be available
-         * at runtime.
-         */
-        def packages = [
-                'org.lappsgrid.api',
-                'org.lappsgrid.core',
-                'org.lappsgrid.client',
-                'org.lappsgrid.discriminator',
-                'org.lappsgrid.serialization',
-                'org.lappsgrid.serialization.lif',
-                'org.lappsgrid.serialization.datasource',
-                'org.lappsgrid.metadata'
-        ]
-        packages.each {
-            customizer.addStarImports(it)
-        }
-        customizer.addStaticImport('org.lappsgrid.discriminator.Discriminators', 'Uri')
-
-        CompilerConfiguration configuration = new CompilerConfiguration()
-        configuration.addCompilationCustomizers(customizer)
-        return configuration
-    }
-
-    MetaClass getMetaClass(Class scriptClass) {
-        ExpandoMetaClass mc = new ExpandoMetaClass(scriptClass, false)
-        mc.include = { String filename ->
-            if (included.contains(filename)) {
-                return
-            }
-            File file = new File(filename)
-            if (!file.exists()) {
-                return "File not found: $filename"
-            }
-
-            included.add(filename)
-            Script include = compiler.parse(file)
-            include.metaClass = getMetaClass(include.class)
-            include.run()
-            return "Included $filename"
-        }
-
-        mc.initialize()
-        return mc
-    }
-
 }

@@ -1,4 +1,4 @@
-package org.lappsgrid.jupyter
+package org.lappsgrid.jupyter.lapps
 
 import com.github.jmchilton.blend4j.galaxy.GalaxyInstance
 import com.github.jmchilton.blend4j.galaxy.GalaxyInstanceFactory
@@ -6,8 +6,6 @@ import com.github.jmchilton.blend4j.galaxy.HistoriesClient
 import com.github.jmchilton.blend4j.galaxy.ToolsClient
 import com.github.jmchilton.blend4j.galaxy.beans.History
 import com.github.jmchilton.blend4j.galaxy.beans.HistoryContents
-import com.sun.jersey.api.client.ClientResponse
-import org.lappsgrid.serialization.Serializer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -51,7 +49,7 @@ class GalaxyClient {
         logger.debug("History contains {} items", contentsList.size())
         HistoryContents contents = contentsList.find { it.hid == hid }
         if (contents) {
-            URL url = new URL(galaxy.galaxyUrl + contents.url + "/display?key=${galaxy.apiKey}")
+            URL url = new URL(galaxy.galaxyUrl + contents.url + "/display?hmac=${galaxy.apiKey}")
             logger.debug("GET {}", url)
             File file = File.createTempFile("groovy-kernel-", ".dat")
             file.text = url.text

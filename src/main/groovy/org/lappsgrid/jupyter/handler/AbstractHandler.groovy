@@ -21,7 +21,7 @@ abstract class AbstractHandler implements IHandler {
         kernel.send(message)
     }
 
-    /** Sends a message to any socket. */
+    /** Sends a message to the specified socket. */
     void send(ZMQ.Socket socket, Message message) {
         kernel.send(socket, message)
     }

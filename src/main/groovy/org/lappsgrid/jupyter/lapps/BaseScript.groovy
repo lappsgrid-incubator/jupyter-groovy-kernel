@@ -1,9 +1,10 @@
-package org.lappsgrid.jupyter
+package org.lappsgrid.jupyter.lapps
 
 import com.github.jmchilton.blend4j.galaxy.GalaxyInstance
 import com.github.jmchilton.blend4j.galaxy.HistoriesClient
 import com.github.jmchilton.blend4j.galaxy.ToolsClient
 import com.github.jmchilton.blend4j.galaxy.beans.History
+import org.lappsgrid.jupyter.GroovyKernel
 import org.lappsgrid.serialization.Data
 import org.lappsgrid.serialization.Serializer
 
@@ -11,9 +12,6 @@ import org.lappsgrid.serialization.Serializer
  * @author Keith Suderman
  */
 abstract class BaseScript extends Script {
-
-//    String GALAXY_HOST
-//    String GALAXY_KEY
 
     GalaxyClient galaxy = new GalaxyClient(GroovyKernel.GALAXY_HOST, GroovyKernel.GALAXY_KEY)
 
@@ -39,8 +37,8 @@ abstract class BaseScript extends Script {
 //    void host(String host) {
 //        GALAXY_HOST = host
 //    }
-//    void key(String key) {
-//        GALAXY_KEY = key
+//    void hmac(String hmac) {
+//        GALAXY_KEY = hmac
 //    }
 
     void put(String path) {
