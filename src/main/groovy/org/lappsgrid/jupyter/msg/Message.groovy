@@ -11,7 +11,7 @@ import org.lappsgrid.jupyter.json.Serializer
 @JsonPropertyOrder(['identities', 'header', 'parentHeader', 'metadata', 'content'])
 class Message {
     /**
-     * The Type class is to enable code complet
+     * The Type class is to enable code completion in your Groovy IDE.
      */
     public static class Type {
         // Shell messages.

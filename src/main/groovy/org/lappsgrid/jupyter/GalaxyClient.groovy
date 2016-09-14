@@ -53,14 +53,8 @@ class GalaxyClient {
         if (contents) {
             URL url = new URL(galaxy.galaxyUrl + contents.url + "/display?key=${galaxy.apiKey}")
             logger.debug("GET {}", url)
-//            Map data = Serializer.parse(url.text, LinkedHashMap)
             File file = File.createTempFile("groovy-kernel-", ".dat")
             file.text = url.text
-//            File file = new File(data.file_name)
-//            if (!file.exists()) {
-//                logger.info("File not found: {}", data.file_name)
-//                return null
-//            }
             logger.info("Found file {}", file.path)
             return file
         }
@@ -70,8 +64,9 @@ class GalaxyClient {
         }
     }
 
-//    void foo() {
-//        history.
-//    }
-
+    boolean selectHistory(String name) {
+        logger.info("Selection history {}", name)
+        history = histories.histories.find { it.name == name }
+        return history != null
+    }
 }

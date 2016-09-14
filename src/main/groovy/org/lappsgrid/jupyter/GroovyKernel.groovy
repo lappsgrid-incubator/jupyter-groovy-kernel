@@ -235,7 +235,6 @@ class GroovyKernel {
             // Make sure that the signatures match before proceeding.
             String actualSig = key.signBytes([header, parent, metadata, content])
             if (expectedSig != actualSig) {
-                // TODO In practice this should log the errors and then throw the exception.
                 logger.error("Message signatures do not match")
                 logger.error("Expected: []", expectedSig)
                 logger.error("Actual  : []", actualSig)

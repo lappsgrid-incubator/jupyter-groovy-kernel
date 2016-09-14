@@ -5,6 +5,7 @@ import com.github.jmchilton.blend4j.galaxy.GalaxyInstanceFactory
 import com.github.jmchilton.blend4j.galaxy.HistoriesClient
 import com.github.jmchilton.blend4j.galaxy.beans.History
 import com.github.jmchilton.blend4j.galaxy.beans.HistoryContents
+import com.github.jmchilton.blend4j.galaxy.beans.HistoryDetails
 import com.github.jmchilton.blend4j.galaxy.beans.Library
 import org.lappsgrid.jupyter.GalaxyClient
 import org.lappsgrid.serialization.Serializer
@@ -18,23 +19,25 @@ class GalaxyTest {
 //    static final String API_KEY = System.getenv('GALAXY_KEY')
 
     GalaxyInstance galaxy;
-    HistoriesClient client;
+    HistoriesClient histories;
     History history
 
     String HOST
     String KEY
     void setup() {
-        Properties p = new Properties()
-        p.load(new File('groovy-kernel.properties').newInputStream())
-        HOST = p.GALAXY_HOST
-        KEY = p.GALAXY_KEY
+//        Properties p = new Properties()
+//        p.load(new File('groovy-kernel.properties').newInputStream())
+//        HOST = p.GALAXY_HOST
+//        KEY = p.GALAXY_KEY
+        HOST = 'http://galaxy.lappsgrid.org'
+        KEY = '6f716395c326f6eda8bc4cec030f307f'
         galaxy = GalaxyInstanceFactory.get(HOST, KEY)
-        client = galaxy.historiesClient
-        history = client.histories.get(0)
+        histories = galaxy.historiesClient
+        history = histories.histories.get(0)
     }
 
     HistoryContents findHistory(int hid) {
-        return client.showHistoryContents(history.id).find {
+        return histories.showHistoryContents(history.id).find {
             it.hid == hid
         }
     }
@@ -50,7 +53,7 @@ class GalaxyTest {
 
     /*
     payload = {
-        'key'           : api_key,
+        'KEY'           : api_key,
         'tool_id'       : 'upload1',
         'history_id'    : history_id,
     }
@@ -80,7 +83,7 @@ class GalaxyTest {
 
         if (contents) {
             println contents.url
-            URL url = new URL(GALAXY_URL + contents.url + "?key=${API_KEY}")
+            URL url = new URL(GALAXY_URL + contents.url + "?KEY=${API_KEY}")
             Map data = Serializer.parse(url.text, LinkedHashMap)
             File file = new File(data.file_name)
             if (!file.exists()) {
@@ -95,6 +98,34 @@ class GalaxyTest {
         }
     }
 
+    void histories() {
+        setup()
+        histories.histories.each { History history ->
+            println "Name: ${history.name}"
+            println "ID  : ${history.id}"
+            println "URL : ${history.url}"
+//            HistoryDetails details = histories.showHistory(history.id)
+//            println "Details Name : ${details.name}"
+//            println "Details Id   : ${details.name}"
+//            println "Details URL  : ${details.url}"
+//            println "Details State: ${details.state}"
+//            histories.showHistoryContents(history.id).each { HistoryContents contents ->
+//                if (!contents.deleted) {
+//                    println "   id     : ${contents.id}"
+//                    println "   state  : ${contents.state}"
+//                    println "   url    : ${contents.url}"
+////                    println "   deleted: ${contents.deleted}"
+//                    println "   hid    : ${contents.hid}"
+//                    println "   type   : ${contents.historyContentType}"
+//                    println "   name   : ${contents.name}"
+////                    println "   purged : ${contents.purged}"
+//                    println "   ----------"
+//                }
+//            }
+            println()
+        }
+    }
+
     void client() {
         setup()
         GalaxyClient client = new GalaxyClient(HOST, KEY)
@@ -104,6 +135,6 @@ class GalaxyTest {
     }
 
     static void main(String[] args) {
-        new GalaxyTest().client()
+        new GalaxyTest().histories()
     }
 }

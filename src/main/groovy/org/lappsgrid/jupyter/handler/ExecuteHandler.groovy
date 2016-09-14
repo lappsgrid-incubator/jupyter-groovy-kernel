@@ -18,12 +18,15 @@ class ExecuteHandler extends AbstractHandler {
     int executionCount
     Binding binding
     GroovyShell compiler
+    Set<String> included
 
     public ExecuteHandler(GroovyKernel kernel) {
         super(kernel)
         logger = LoggerFactory.getLogger(ExecuteHandler)
         executionCount = 0
         binding = new Binding()
+        included = new HashSet<String>()
+
         CompilerConfiguration configuration = getCompilerConfiguration()
         configuration.scriptBaseClass = BaseScript.class.name
         compiler = new GroovyShell(this.class.classLoader, binding, configuration)
@@ -157,8 +160,22 @@ class ExecuteHandler extends AbstractHandler {
 
     MetaClass getMetaClass(Class scriptClass) {
         ExpandoMetaClass mc = new ExpandoMetaClass(scriptClass, false)
-        mc.print = { it?.toString() ?: '' }
-        mc.println = { it?.toString() ?: '' }
+        mc.include = { String filename ->
+            if (included.contains(filename)) {
+                return
+            }
+            File file = new File(filename)
+            if (!file.exists()) {
+                return "File not found: $filename"
+            }
+
+            included.add(filename)
+            Script include = compiler.parse(file)
+            include.metaClass = getMetaClass(include.class)
+            include.run()
+            return "Included $filename"
+        }
+
         mc.initialize()
         return mc
     }

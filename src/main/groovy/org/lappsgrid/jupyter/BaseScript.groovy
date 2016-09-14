@@ -64,10 +64,18 @@ abstract class BaseScript extends Script {
     String toJson(Object o) {
         return Serializer.toJson(o)
     }
+
     String toPrettyJson(Object o) {
         return Serializer.toPrettyJson(o)
     }
-    
+
+    String selectHistory(String name) {
+        if (!galaxy.selectHistory(name)) {
+            return "No history named '$name' was found."
+        }
+        return galaxy.history.id
+    }
+
     GalaxyInstance galaxy() { return galaxy.galaxy }
     HistoriesClient histories() { return galaxy.histories }
     ToolsClient tools() { return galaxy.tools }
