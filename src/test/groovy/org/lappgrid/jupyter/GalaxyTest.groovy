@@ -5,9 +5,8 @@ import com.github.jmchilton.blend4j.galaxy.GalaxyInstanceFactory
 import com.github.jmchilton.blend4j.galaxy.HistoriesClient
 import com.github.jmchilton.blend4j.galaxy.beans.History
 import com.github.jmchilton.blend4j.galaxy.beans.HistoryContents
-import com.github.jmchilton.blend4j.galaxy.beans.HistoryDetails
 import com.github.jmchilton.blend4j.galaxy.beans.Library
-import org.lappsgrid.jupyter.lapps.GalaxyClient
+import org.lappsgrid.jupyter.groovy.lapps.GalaxyClient
 import org.lappsgrid.serialization.Serializer
 
 /**

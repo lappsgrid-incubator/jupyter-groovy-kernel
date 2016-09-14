@@ -9,7 +9,7 @@
         <version>2.0.2</version>
     </parent>
     <groupId>org.lappsgrid.jupyter</groupId>
-    <artifactId>jupyter-groovy-kernel</artifactId>
+    <artifactId>groovy-kernel</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <properties>
         <groovy.version>2.4.3</groovy.version>
@@ -83,7 +83,7 @@
                     <appendAssemblyId>true</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>org.lappsgrid.jupyter.GroovyKernel</mainClass>
+                            <mainClass>org.lappsgrid.org.lappsgrid.jupyter.lsd.jupyter.GroovyKernel</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -106,13 +106,6 @@
             <artifactId>ivy</artifactId>
             <version>${ivy.version}</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>all</artifactId>
-            <version>${lapps.all.version}</version>
-        </dependency>
-        -->
         <dependency>
             <groupId>org.lappsgrid</groupId>
             <artifactId>api</artifactId>

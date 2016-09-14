@@ -1,9 +1,8 @@
 package org.lappgrid.jupyter
 
 import com.github.jmchilton.blend4j.galaxy.ToolsClient
-import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.ClientResponse
-import org.lappsgrid.jupyter.lapps.GalaxyClient
+import org.lappsgrid.jupyter.groovy.lapps.GalaxyClient
 
 /**
  * @author Keith Suderman
