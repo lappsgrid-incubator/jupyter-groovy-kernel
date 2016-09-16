@@ -9,8 +9,27 @@
         <version>2.0.2</version>
     </parent>
     <groupId>org.lappsgrid.jupyter</groupId>
-    <artifactId>groovy-kernel</artifactId>
+    <artifactId>jupyter-groovy-kernel</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <name>Jupyter Groovy Kernel</name>
+    <description>A Jupyter kernel for Apache Groovy.</description>
+    <inceptionYear>2016</inceptionYear>
+    <url>https://github.com/lappsgrid-incubator/jupyter-kernel</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/lappsgrid-incubator/jupyter-kernel</url>
+        <connection>scm:git:https://github.com/lappsgrid-incubator/jupyter-kernel.git</connection>
+        <developerConnection>scm:git:https://github.com/lappsgrid-incubator/jupyter-kernel.git</developerConnection>
+    </scm>
+    <issueManagement>
+        <url>https://github.com/lappsgrid-incubator/jupyter-kernel/issues</url>
+        <system>GitHub issues</system>
+    </issueManagement>
     <properties>
         <groovy.version>2.4.3</groovy.version>
         <ivy.version>2.4.0</ivy.version>
@@ -24,6 +43,7 @@
                 <configuration>
                     <compilerId>groovy-eclipse-compiler</compilerId>
                     <verbose>true</verbose>
+                    <compilerArgument>-J -Xmx2G -Xss10M</compilerArgument>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -49,7 +69,7 @@
                 <artifactId>anc-maven-plugin</artifactId>
                 <version>1.0.7</version>
                 <configuration>
-                    <package>org.lappsgrid.ipython.kernel</package>
+                    <package>org.lappsgrid.jupyter.groovy</package>
                 </configuration>
                 <executions>
                     <execution>
@@ -80,12 +100,29 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                    <appendAssemblyId>true</appendAssemblyId>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>org.lappsgrid.org.lappsgrid.jupyter.lsd.jupyter.GroovyKernel</mainClass>
+                            <mainClass>org.lappsgrid.jupyter.groovy.GroovyKernel</mainClass>
                         </manifest>
                     </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.bluetrainsoftware.maven</groupId>
+                <artifactId>groovydoc-maven-plugin</artifactId>
+                <version>1.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-docs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-docs</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <destinationDirectory>${project.reporting.outputDirectory}/groovydoc</destinationDirectory>
                 </configuration>
             </plugin>
         </plugins>
@@ -107,41 +144,6 @@
             <version>${ivy.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>api</artifactId>
-            <version>2.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>core</artifactId>
-            <version>2.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>client</artifactId>
-            <version>2.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>discriminator</artifactId>
-            <version>2.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>serialization</artifactId>
-            <version>2.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>metadata</artifactId>
-            <version>1.0.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lappsgrid</groupId>
-            <artifactId>annotations</artifactId>
-            <version>1.0.3</version>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.1.3</version>
@@ -157,19 +159,36 @@
             <version>1.9</version>
         </dependency>
         <dependency>
-            <groupId>com.github.jmchilton.blend4j</groupId>
-            <artifactId>blend4j</artifactId>
-            <version>0.2.0-SNAPSHOT</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.5.1</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>1.19</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.5.1</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.jersey.contribs</groupId>
-            <artifactId>jersey-multipart</artifactId>
-            <version>1.17.1</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.5.1</version>
         </dependency>
     </dependencies>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>com.bluetrainsoftware.maven</groupId>
+                <artifactId>groovydoc-maven-plugin</artifactId>
+                <version>1.3</version>
+                <configuration>
+                    <destinationDirectory>${project.reporting.outputDirectory}/groovydoc</destinationDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
