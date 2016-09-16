@@ -1,1 +1,7 @@
 org.lappsgrid.jupyter.groovy
+org.lappsgrid.jupyter.groovy.context
+org.lappsgrid.jupyter.groovy.handler
+org.lappsgrid.jupyter.groovy.json
+org.lappsgrid.jupyter.groovy.msg
+org.lappsgrid.jupyter.groovy.security
+org.lappsgrid.jupyter.groovy.threads
