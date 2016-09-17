@@ -81,4 +81,4 @@ class CustomJupyterKernel {
 }
 ```
 
-See the [Lappsgrid Services DSL Jupyter kernel](https://github.org/lappsgrid-incubator/jupyter-lsd-kernel) for an example of implementing a Jupyter kernel for a Groovy DSL using the Groovy Jupyter kernel.
+See the [Lappsgrid Services DSL Jupyter kernel](https://github.com/lappsgrid-incubator/jupyter-lsd-kernel) for an example of implementing a Jupyter kernel for a Groovy DSL using the Groovy Jupyter kernel.
