@@ -10,11 +10,11 @@
     </parent>
     <groupId>org.lappsgrid.jupyter</groupId>
     <artifactId>jupyter-groovy-kernel</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>Jupyter Groovy Kernel</name>
     <description>A Jupyter kernel for Apache Groovy.</description>
     <inceptionYear>2016</inceptionYear>
-    <url>https://github.com/lappsgrid-incubator/jupyter-kernel</url>
+    <url>https://github.com/lappsgrid-incubator/jupyter-groovy-kernel</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -22,12 +22,12 @@
         </license>
     </licenses>
     <scm>
-        <url>https://github.com/lappsgrid-incubator/jupyter-kernel</url>
-        <connection>scm:git:https://github.com/lappsgrid-incubator/jupyter-kernel.git</connection>
-        <developerConnection>scm:git:https://github.com/lappsgrid-incubator/jupyter-kernel.git</developerConnection>
+        <url>https://github.com/lappsgrid-incubator/jupyter-groovy-kernel</url>
+        <connection>scm:git:https://github.com/lappsgrid-incubator/jupyter-groovy-kernel.git</connection>
+        <developerConnection>scm:git:https://github.com/lappsgrid-incubator/jupyter-groovy-kernel.git</developerConnection>
     </scm>
     <issueManagement>
-        <url>https://github.com/lappsgrid-incubator/jupyter-kernel/issues</url>
+        <url>https://github.com/lappsgrid-incubator/jupyter-groovy-kernel/issues</url>
         <system>GitHub issues</system>
     </issueManagement>
     <properties>

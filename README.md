@@ -2,6 +2,10 @@
 
 A native [Jupyter](http://jupyter.org) kernel for the [Apache Groovy](http://www.groovy-lang.org) language. By "native" we mean the kernel is written in Groovy and handles the ZeroMQ message queues directly.
 
+## Documentation
+
+The Maven generate site (API docs etc.) is available [here](https://lappsgrid-incubator.github.io/jupyter-groovy-kernel).
+
 ## Installation
 
 ### From Source
