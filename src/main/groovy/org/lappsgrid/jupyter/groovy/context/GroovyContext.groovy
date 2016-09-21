@@ -27,6 +27,23 @@ import org.lappsgrid.jupyter.groovy.GroovyKernel
  * @author Keith Suderman
  */
 interface GroovyContext {
+    /**
+     * Obtain a CompilerConfiguration object the Groovy compiler will use when compiling
+     * user code.
+     * @return an initialized CompilerConfiguration object.
+     */
     CompilerConfiguration getCompilerConfiguration();
-    MetaClass getMetaClass(Class aClass);
+
+    /**
+     * Obtain the MetaClass for compiled user code.
+     * <p>
+     * This MetaClass will be used by the Script object obtained by compiling user code.
+     * User code will be compiled into a <code>Script</code> object by the Groovy compiler, the
+     * script will have its <code>metaClass</code> field set, and then<code>run</code> is called.
+     *
+     * @param theClass the class the MetaClass applies to.
+     * @param initialize if the MetaClass should be initialized.
+     * @return
+     */
+    MetaClass getMetaClass(Class theClass, boolean initialize);
 }

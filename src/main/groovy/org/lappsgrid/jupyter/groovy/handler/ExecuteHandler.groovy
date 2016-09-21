@@ -82,7 +82,7 @@ class ExecuteHandler extends AbstractHandler {
         try {
             logger.debug("Running: {}", code)
             Script script = compiler.parse(code)
-            ExpandoMetaClass meta = kernel.context.getMetaClass(script.class)
+            ExpandoMetaClass meta = kernel.context.getMetaClass(script.class, false)
             meta.readline = { String prompt ->
                 if (!kernel.stdinEnabled) {
                     return "STDIN is not enabled for this request."
@@ -124,7 +124,6 @@ class ExecuteHandler extends AbstractHandler {
             publish(reply)
         }
         catch (Exception e) {
-            //e.printStackTrace()
             logger.error('Unable to execute code block.', e)
             error = e
             reply.header = new Header(STREAM, message)

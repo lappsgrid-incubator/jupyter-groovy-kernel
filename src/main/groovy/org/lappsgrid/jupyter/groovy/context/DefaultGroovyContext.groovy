@@ -18,8 +18,6 @@
 package org.lappsgrid.jupyter.groovy.context
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.lappsgrid.jupyter.groovy.GroovyKernel
-import org.zeromq.ZMQ
 
 /**
  * The DefaultGroovyContext implements the GroovyContext interface and returns default
@@ -37,9 +35,11 @@ class DefaultGroovyContext implements GroovyContext {
     }
 
     @Override
-    MetaClass getMetaClass(Class aClass) {
+    MetaClass getMetaClass(Class aClass, boolean initialize) {
         MetaClass mc = new ExpandoMetaClass(aClass, false)
-        mc.initialize()
+        if (initialize) {
+            mc.initialize()
+        }
         return mc
     }
 }

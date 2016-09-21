@@ -81,11 +81,6 @@ class GroovyKernel {
     ZMQ.Socket iopubSocket
     ZMQ.Socket stdinSocket
 
-    // Thread objects that manage sockets and socket handlers.
-//    ControlThread controlThread
-//    HeartbeatThread heartbeatThread
-//    StdinThread shellThread
-
     public GroovyKernel() {
         this(new DefaultGroovyContext())
     }
@@ -218,8 +213,8 @@ class GroovyKernel {
             String actualSig = hmac.signBytes([header, parent, metadata, content])
             if (expectedSig != actualSig) {
                 logger.error("Message signatures do not match")
-                logger.error("Expected: []", expectedSig)
-                logger.error("Actual  : []", actualSig)
+                logger.error("Expected: {}", expectedSig)
+                logger.error("Actual  : {}", actualSig)
                 throw new RuntimeException("Signatures do not match.")
             }
 
@@ -267,12 +262,11 @@ class GroovyKernel {
         shellSocket = newSocket(ZMQ.ROUTER, configuration.shell)
 
         // Create all the threads that respond to ZMQ messages.
-        Thread heartbeatThread = new HeartbeatThread(hearbeatSocket, this)
-        Thread controlThread = new ControlThread(controlSocket, this)
-        Thread shellThread = new ShellThread(shellSocket, this)
-
-        // Start all the socket handler threads
-        List threads = [ heartbeatThread, controlThread, shellThread ]
+        List threads = [
+                new HeartbeatThread(hearbeatSocket, this),
+                new ControlThread(controlSocket, this),
+                new ShellThread(shellSocket, this)
+        ]
         threads*.start()
 
         while (running) {
