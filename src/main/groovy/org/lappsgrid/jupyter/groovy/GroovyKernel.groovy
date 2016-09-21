@@ -54,6 +54,7 @@ class GroovyKernel {
     static final TimeZone UTC = TimeZone.getTimeZone('UTC')
 
     private volatile boolean running = false
+    boolean stdinEnabled = false
 
     static final String DELIM = "<IDS|MSG>"
 
@@ -79,6 +80,11 @@ class GroovyKernel {
     ZMQ.Socket shellSocket
     ZMQ.Socket iopubSocket
     ZMQ.Socket stdinSocket
+
+    // Thread objects that manage sockets and socket handlers.
+//    ControlThread controlThread
+//    HeartbeatThread heartbeatThread
+//    StdinThread shellThread
 
     public GroovyKernel() {
         this(new DefaultGroovyContext())
@@ -126,6 +132,10 @@ class GroovyKernel {
                 is_complete_request: new CompleteHandler(this),
                 history_request: new HistoryHandler(this),
         ]
+    }
+
+    void allowStdin(boolean allow) {
+        stdinEnabled = allow
     }
 
     /** Sends a Message to the iopub socket. */
@@ -257,13 +267,12 @@ class GroovyKernel {
         shellSocket = newSocket(ZMQ.ROUTER, configuration.shell)
 
         // Create all the threads that respond to ZMQ messages.
-        Thread heartbeat = new HeartbeatThread(hearbeatSocket, this)
-        Thread control = new ControlThread(controlSocket, this)
-        Thread stdin = new StdinThread(stdinSocket, this)
-        Thread shell = new ShellThread(shellSocket, this)
+        Thread heartbeatThread = new HeartbeatThread(hearbeatSocket, this)
+        Thread controlThread = new ControlThread(controlSocket, this)
+        Thread shellThread = new ShellThread(shellSocket, this)
 
         // Start all the socket handler threads
-        List threads = [ heartbeat, control, stdin, shell ]
+        List threads = [ heartbeatThread, controlThread, shellThread ]
         threads*.start()
 
         while (running) {

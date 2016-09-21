@@ -47,6 +47,10 @@ class Message {
         public static final String STATUS = 'status'
         public static final String STREAM = 'stream'
 
+        // Stdin messages
+        public static final String STDIN_REQUEST = "input_request"
+        public static final String STDIN_REPLY = "input_reply"
+
         // Control messages
         public static final String SHUTDOWN_REQUEST = 'shutdown_request'
         public static final String SHUTDOWN_REPLY = 'shutdown_reply'

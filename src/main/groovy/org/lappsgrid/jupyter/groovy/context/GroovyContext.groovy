@@ -18,6 +18,7 @@
 package org.lappsgrid.jupyter.groovy.context
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.lappsgrid.jupyter.groovy.GroovyKernel
 
 /**
  * Objects that implement the GroovyContext interface are used to obtain CompilerConfiguration

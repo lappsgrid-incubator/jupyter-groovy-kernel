@@ -23,12 +23,14 @@ import org.slf4j.LoggerFactory
 import org.zeromq.ZMQ
 
 /**
- * Handling messages on the STDIN thread is not implemented yet.
+ * This class is not used and will be removed.
  *
  * @author Keith Suderman
  */
 class StdinThread extends AbstractThread {
     public static final Logger logger = LoggerFactory.getLogger(StdinThread)
+
+    boolean enabled = false
 
     public StdinThread(ZMQ.Socket socket, GroovyKernel kernel) {
         super(socket, kernel)
@@ -41,5 +43,9 @@ class StdinThread extends AbstractThread {
             logger.info("Stdin: {}", new String(buffer))
         }
         logger.info("StdinThread shutdown.")
+    }
+
+    void read(String prompt) {
+
     }
 }

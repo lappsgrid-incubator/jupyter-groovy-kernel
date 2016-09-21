@@ -18,6 +18,8 @@
 package org.lappsgrid.jupyter.groovy.context
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.lappsgrid.jupyter.groovy.GroovyKernel
+import org.zeromq.ZMQ
 
 /**
  * The DefaultGroovyContext implements the GroovyContext interface and returns default

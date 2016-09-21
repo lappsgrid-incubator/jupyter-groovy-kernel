@@ -23,14 +23,14 @@ NAME=jupyter-groovy-kernel
 
 VERSION=`cat VERSION`
 JAR=$NAME-$VERSION.jar
-DIST=target/$NAME
+DIST=target/groovy
 
 if [ ! -e $DIST ] ; then
 	mkdir -p $DIST
 fi
 
 cp target/$JAR $KERNEL_DIR
-cat kernel.json | sed "s|__PATH__|$KERNEL_DIR/$JAR|" > ./$DIST/kernel.json
+cat src/distribution/kernel.json | sed "s|__PATH__|$KERNEL_DIR/$JAR|" > $DIST/kernel.json
 
 echo "Installing the Groovy kernel to $KERNEL_DIR"
 jupyter kernelspec install --replace --name groovy $DIST
