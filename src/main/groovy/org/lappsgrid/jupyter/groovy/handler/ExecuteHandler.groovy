@@ -22,6 +22,7 @@ import org.lappsgrid.jupyter.groovy.GroovyKernel
 import org.lappsgrid.jupyter.groovy.msg.Header
 import org.lappsgrid.jupyter.groovy.msg.Message
 import org.slf4j.LoggerFactory
+import org.zeromq.ZMQ
 
 import static Message.Type.*
 
@@ -59,6 +60,15 @@ class ExecuteHandler extends AbstractHandler {
         // Get the code to be executed from the message.
         String code = message.content.code.trim()
 
+        if (message.content.allow_stdin) {
+            kernel.allowStdin(true)
+        }
+        else {
+            kernel.allowStdin(false)
+        }
+
+        // TODO Should check message.content.store_history here as well.
+
         // Announce that we have the code.
         reply.header = new Header(EXECUTE_INPUT, message)
         reply.content = [
@@ -72,7 +82,29 @@ class ExecuteHandler extends AbstractHandler {
         try {
             logger.debug("Running: {}", code)
             Script script = compiler.parse(code)
-            script.metaClass = kernel.context.getMetaClass(script.class)
+            ExpandoMetaClass meta = kernel.context.getMetaClass(script.class, false)
+            meta.readline = { String prompt ->
+                if (!kernel.stdinEnabled) {
+                    return "STDIN is not enabled for this request."
+                }
+                Message stdinMsg = new Message()
+                stdinMsg.content = [
+                        prompt : prompt,
+                        password: false
+                ]
+                stdinMsg.header = new Header(STDIN_REQUEST, message.header.session)
+                stdinMsg.identities  = message.identities
+                stdinMsg.parentHeader = message.header
+                ZMQ.Socket socket = kernel.stdinSocket
+                kernel.send(socket, stdinMsg)
+                logger.trace("Send message on stdin socket.")
+                stdinMsg = kernel.readMessage(socket)
+                logger.trace ("Received response on stdin socket.")
+                //println stdinMsg.asJson()
+                return stdinMsg.content.value
+            }
+            meta.initialize()
+            script.metaClass = meta
             logger.trace("code compiled")
             Object result = script.run()
             logger.trace("Ran script")
@@ -92,7 +124,6 @@ class ExecuteHandler extends AbstractHandler {
             publish(reply)
         }
         catch (Exception e) {
-            //e.printStackTrace()
             logger.error('Unable to execute code block.', e)
             error = e
             reply.header = new Header(STREAM, message)

@@ -35,9 +35,11 @@ class DefaultGroovyContext implements GroovyContext {
     }
 
     @Override
-    MetaClass getMetaClass(Class aClass) {
+    MetaClass getMetaClass(Class aClass, boolean initialize) {
         MetaClass mc = new ExpandoMetaClass(aClass, false)
-        mc.initialize()
+        if (initialize) {
+            mc.initialize()
+        }
         return mc
     }
 }

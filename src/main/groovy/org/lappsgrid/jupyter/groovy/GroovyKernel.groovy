@@ -54,6 +54,7 @@ class GroovyKernel {
     static final TimeZone UTC = TimeZone.getTimeZone('UTC')
 
     private volatile boolean running = false
+    boolean stdinEnabled = false
 
     static final String DELIM = "<IDS|MSG>"
 
@@ -113,6 +114,24 @@ class GroovyKernel {
         return Serializer.parse(json, theClass)
     }
 
+    Map info() {
+        return [
+            protocol_version: '5.0',
+            implementation: 'groovy',
+            implementation_version: '1.0.0',
+            language_info: [
+                    name: 'Groovy',
+                    version: '2.4.6',
+                    mimetype: '',
+                    file_extension: '.groovy',
+                    pygments_lexer: '',
+                    codemirror_mode: '',
+                    nbconverter_exporter: ''
+            ],
+            banner: 'Apache Groovy',
+            help_links: []
+        ]
+    }
     void shutdown() { running = false }
 
     static String uuid() {
@@ -126,6 +145,10 @@ class GroovyKernel {
                 is_complete_request: new CompleteHandler(this),
                 history_request: new HistoryHandler(this),
         ]
+    }
+
+    void allowStdin(boolean allow) {
+        stdinEnabled = allow
     }
 
     /** Sends a Message to the iopub socket. */
@@ -208,8 +231,8 @@ class GroovyKernel {
             String actualSig = hmac.signBytes([header, parent, metadata, content])
             if (expectedSig != actualSig) {
                 logger.error("Message signatures do not match")
-                logger.error("Expected: []", expectedSig)
-                logger.error("Actual  : []", actualSig)
+                logger.error("Expected: {}", expectedSig)
+                logger.error("Actual  : {}", actualSig)
                 throw new RuntimeException("Signatures do not match.")
             }
 
@@ -257,13 +280,11 @@ class GroovyKernel {
         shellSocket = newSocket(ZMQ.ROUTER, configuration.shell)
 
         // Create all the threads that respond to ZMQ messages.
-        Thread heartbeat = new HeartbeatThread(hearbeatSocket, this)
-        Thread control = new ControlThread(controlSocket, this)
-        Thread stdin = new StdinThread(stdinSocket, this)
-        Thread shell = new ShellThread(shellSocket, this)
-
-        // Start all the socket handler threads
-        List threads = [ heartbeat, control, stdin, shell ]
+        List threads = [
+                new HeartbeatThread(hearbeatSocket, this),
+                new ControlThread(controlSocket, this),
+                new ShellThread(shellSocket, this)
+        ]
         threads*.start()
 
         while (running) {

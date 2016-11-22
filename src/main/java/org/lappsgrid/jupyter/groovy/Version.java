@@ -6,7 +6,7 @@ package org.lappsgrid.jupyter.groovy;
  */
 public final class Version
 {
-	private static final String version = "1.0.0";
+	private static final String version = "1.1.0";
 
 	public static String getVersion() { return version; }
 }

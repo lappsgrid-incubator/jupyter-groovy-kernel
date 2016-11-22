@@ -4,7 +4,7 @@ A native [Jupyter](http://jupyter.org) kernel for the [Apache Groovy](http://www
 
 ## Documentation
 
-The Maven generate site (API docs etc.) is available [here](https://lappsgrid-incubator.github.io/jupyter-groovy-kernel).
+The Maven generated site (API docs etc.) is available [here](https://lappsgrid-incubator.github.io/jupyter-groovy-kernel).
 
 ## Installation
 
