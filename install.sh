@@ -33,6 +33,10 @@ cp target/$JAR $KERNEL_DIR
 cat src/distribution/kernel.json | sed "s|__PATH__|$KERNEL_DIR/$JAR|" > $DIST/kernel.json
 
 echo "Installing the Groovy kernel to $KERNEL_DIR"
-jupyter kernelspec install --replace --name groovy $DIST
+if [ $(whoami) = root ]; then
+  jupyter kernelspec install --replace --name groovy $DIST
+else
+  jupyter kernelspec install --replace --user --name groovy $DIST
+fi
 
 echo "Done."
