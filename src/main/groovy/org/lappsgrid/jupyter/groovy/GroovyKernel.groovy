@@ -114,6 +114,24 @@ class GroovyKernel {
         return Serializer.parse(json, theClass)
     }
 
+    Map info() {
+        return [
+            protocol_version: '5.0',
+            implementation: 'groovy',
+            implementation_version: '1.0.0',
+            language_info: [
+                    name: 'Groovy',
+                    version: '2.4.6',
+                    mimetype: '',
+                    file_extension: '.groovy',
+                    pygments_lexer: '',
+                    codemirror_mode: '',
+                    nbconverter_exporter: ''
+            ],
+            banner: 'Apache Groovy',
+            help_links: []
+        ]
+    }
     void shutdown() { running = false }
 
     static String uuid() {
