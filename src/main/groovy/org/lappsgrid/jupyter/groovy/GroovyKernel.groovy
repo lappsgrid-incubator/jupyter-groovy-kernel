@@ -121,7 +121,7 @@ class GroovyKernel {
             implementation_version: '1.0.0',
             language_info: [
                     name: 'Groovy',
-                    version: '2.4.6',
+                    version: '2.4.7',
                     mimetype: '',
                     file_extension: '.groovy',
                     pygments_lexer: '',
