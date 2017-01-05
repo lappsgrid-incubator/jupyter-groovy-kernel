@@ -20,7 +20,7 @@ docker build --build-arg VERSION=1.1.1 -t lappsgrid/igroovy .
 ```
  
 
- ## Building An Image
+## Building An Image
  
 Since Docker copies the entire contents of the current directory to the Docker daemon when performing a build we keep the files requied by Docker separate from the rest of the project.
 
