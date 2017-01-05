@@ -1,4 +1,0 @@
-#!/bin/bash
-
-jupyter notebook
-
