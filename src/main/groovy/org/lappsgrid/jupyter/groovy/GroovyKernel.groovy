@@ -165,7 +165,7 @@ class GroovyKernel {
         logger.trace("Sending message: {}", message.asJson())
         // Encode the message parts (blobs) and calculate the signature.
         List parts = [
-                encode(message.header),
+                enacode(message.header),
                 encode(message.parentHeader),
                 encode(message.metadata),
                 encode(message.content)

@@ -7,3 +7,5 @@ VERSION
 src/main/java/org/lappsgrid/jupyter/groovy/Version.java
 groovy-kernel.properties
 jupyter-groovy-kernel
+src/docker/*.jar
+src/docker/kernel.json
