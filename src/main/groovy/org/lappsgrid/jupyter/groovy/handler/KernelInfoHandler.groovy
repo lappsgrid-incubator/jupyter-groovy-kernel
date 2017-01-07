@@ -47,6 +47,7 @@ class KernelInfoHandler extends AbstractHandler {
         reply.parentHeader = message.header
         reply.identities = message.identities
         logger.debug("Sending kernel info reply.")
+        logger.debug(reply.asJson())
         send(reply)
     }
 }
