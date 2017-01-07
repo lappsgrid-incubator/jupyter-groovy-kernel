@@ -2,6 +2,15 @@
 
 A native [Jupyter](http://jupyter.org) kernel for the [Apache Groovy](http://www.groovy-lang.org) language. By "native" we mean the kernel is written in Groovy and handles the ZeroMQ message queues directly.
 
+## Contents
+
+1. [Installation](#installation)  
+  a. [From Source](#from-source)  
+  a. [Manually](#manually)  
+1. [Docker](#docker)    
+1. [Creating a Kernel for a Groovy DSL](#creating-a-kernel-for-a-groovy-dsl)
+1. [Contributing](#contributing)
+ 
 ## Documentation
 
 The Maven generated site (API docs etc.) is available [here](https://lappsgrid-incubator.github.io/jupyter-groovy-kernel).
@@ -40,6 +49,16 @@ By default the *install.sh* script will install the Jupyter kernel to  the syste
 
 * Edit the *install.script* and add the *--user* option to the `kernelspec` command, or
 * Edit the kernel.json file to set the *argv* paramater to the location of the Jupyter Groovy kernel and then run the `jupyter kernelspec install` command.
+
+## Docker
+
+A Docker image containing the Groovy Kernel is available from the [Docker Hub](https://hub.docker.com/r/lappsgrid/jupyter-groovy-kernel). To save notebooks outside of the Docker container you will need to mount a local directory as */home/jovyan/work* inside the container.
+
+```bash
+docker run -p 8888:8888 -v /path/to/local/directory:/home/jovyan/work lappsgrid/jupyter-groovy-kernel
+```
+
+Please refer to the Docker Hub website for a list of the current Docker images available.
 
 ## Creating a Kernel for a Groovy DSL
 
@@ -82,3 +101,7 @@ class CustomJupyterKernel {
 ```
 
 See the [Lappsgrid Services DSL Jupyter kernel](https://github.com/lappsgrid-incubator/jupyter-lsd-kernel) for an example of implementing a Jupyter kernel for a Groovy DSL using the Groovy Jupyter kernel.
+
+## Contributing
+
+If you would like to contribute to the Jupyter Groovy Kernel please Fork this repository, make your changes, and then submit a pull request targeting the `develop` branch.
