@@ -19,6 +19,7 @@ package org.lappsgrid.jupyter.groovy.handler
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.lappsgrid.jupyter.groovy.GroovyKernel
+import org.lappsgrid.jupyter.groovy.Version
 import org.lappsgrid.jupyter.groovy.msg.Header
 import org.lappsgrid.jupyter.groovy.msg.Message
 import org.slf4j.LoggerFactory
@@ -103,6 +104,15 @@ class ExecuteHandler extends AbstractHandler {
                 //println stdinMsg.asJson()
                 return stdinMsg.content.value
             }
+            meta.version = {
+                return """
+Groovy Jupyter Kernel v${Version.version}
+Copyright 2017 The Language Application Grid
+Distributed under the Apache 2.0 License
+See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more information.
+"""
+            }
+
             meta.initialize()
             script.metaClass = meta
             logger.trace("code compiled")
