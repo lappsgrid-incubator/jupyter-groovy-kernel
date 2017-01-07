@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y openjdk-8-jdk
 RUN mkdir -p $KERNEL_DIR
 COPY $JAR $KERNEL_DIR/$JAR
 COPY kernel.json $KERNEL_DIR/kernel.json
-RUN jupyter kernelspec install --replace --name groovy $KERNEL_DIR
+RUN jupyter kernelspec install --name groovy $KERNEL_DIR
 
 VOLUME ["/home/jovyan/work"]
 WORKDIR /home/jovyan/work
