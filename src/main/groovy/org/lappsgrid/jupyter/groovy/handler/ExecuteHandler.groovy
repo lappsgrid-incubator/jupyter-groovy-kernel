@@ -124,7 +124,7 @@ class ExecuteHandler extends AbstractHandler {
             publish(reply)
         }
         catch (Exception e) {
-            logger.error('Unable to execute code block.', e)
+            logger.error('Unable to execute code block.', e.message)
             error = e
             reply.header = new Header(STREAM, message)
             reply.content = [
