@@ -58,7 +58,7 @@ class ShellThread extends AbstractThread {
             }
             catch (Throwable t) {
                 running = false
-                logger.trace("Exception in ShellThread.", t)
+                logger.warn("Exception in ShellThread.", t)
             }
         }
         logger.info("ShellThread shutdown.")
