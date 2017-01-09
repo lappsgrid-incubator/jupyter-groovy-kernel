@@ -19,6 +19,8 @@ package org.lappsgrid.jupyter.groovy.threads
 
 import org.lappsgrid.jupyter.groovy.GroovyKernel
 import org.lappsgrid.jupyter.groovy.msg.Message
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.zeromq.ZMQ
 
 /**
@@ -28,18 +30,24 @@ abstract class AbstractThread extends Thread {
     boolean running = false
     ZMQ.Socket socket
     GroovyKernel kernel
+    final Logger logger
 
-    public AbstractThread(ZMQ.Socket socket, GroovyKernel kernel) {
+    public AbstractThread(ZMQ.Socket socket, GroovyKernel kernel, Class theClass) {
         this.socket = socket
         this.kernel = kernel
+        this.logger = LoggerFactory.getLogger(theClass)
     }
 
     void start() {
+        logger.info('Thread starting.')
         running = true
         super.start()
     }
 
-    void halt() { running = false }
+    void halt() {
+        logger.info("Thread halting.")
+        running = false
+    }
 
     Message readMessage() {
         return kernel.readMessage(socket)

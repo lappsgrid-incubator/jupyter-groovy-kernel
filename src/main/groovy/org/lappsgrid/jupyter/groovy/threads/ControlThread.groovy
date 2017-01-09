@@ -31,23 +31,24 @@ import static org.lappsgrid.jupyter.groovy.msg.Message.Type.SHUTDOWN_REQUEST
  * @author Keith Suderman
  */
 class ControlThread extends AbstractThread {
-    public static final Logger logger = LoggerFactory.getLogger(ControlThread)
 
     public ControlThread(ZMQ.Socket socket, GroovyKernel kernel) {
-        super(socket, kernel)
+        super(socket, kernel, ControlThread.class)
     }
 
     void run() {
+        logger.info("ControlThread starting.")
         while (running) {
             Message message = readMessage()
             String type = message.header.type
             if (type == SHUTDOWN_REQUEST) {
                 logger.info("Control handler received a shutdown request")
-                kernel.shutdown()
+                running = false
                 Message reply = new Message()
                 reply.header = new Header(SHUTDOWN_REPLY, message)
                 reply.parentHeader = message.header
                 reply.content = message.content
+                kernel.shutdown()
                 send(reply)
             }
             else {

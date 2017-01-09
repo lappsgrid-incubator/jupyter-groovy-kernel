@@ -26,16 +26,30 @@ import org.zeromq.ZMQ
  * @author Keith Suderman
  */
 class HeartbeatThread extends AbstractThread {
-    public static final Logger logger = LoggerFactory.getLogger(HeartbeatThread)
 
-    public HeartbeatThread(ZMQ.Socket socket, GroovyKernel kernel) {
-        super(socket, kernel)
+    HeartbeatThread(ZMQ.Socket socket, GroovyKernel kernel) {
+        super(socket, kernel, org.lappsgrid.jupyter.groovy.threads.HeartbeatThread.class)
     }
 
     void run() {
+        logger.info("Heartbeat thread starting.")
+        ZMQ.Poller poller = new ZMQ.Poller(1)
+        poller.register(socket, ZMQ.Poller.POLLIN)
         while (running) {
-            byte[] buffer = socket.recv(0)
-            socket.send(buffer)
+                if (poller.poll(0)) {
+                    try {
+                        byte[] buffer = socket.recv(0)
+                        socket.send(buffer)
+                    }
+                    catch (Throwable t) {
+                        // This likley means socket.close() has been called due to the kernel
+                        // receiving a SHUTDOWN message from the notebook.
+                        logger.warn("Error handling heartbeat socket. {}", t)
+                    }
+                }
+                else {
+                    sleep(1000) { true }
+                }
         }
         logger.info("HearbeatThread shutdown.")
     }
