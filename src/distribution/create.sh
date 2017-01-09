@@ -13,24 +13,7 @@ fi
 
 cp $TARGET/$JAR $DIST
 cp kernel.json $DIST
-echo "#!/bin/bash
-set -e
-
-if [ -z \$1 ] ; then
-    echo 'No target directory specified.'
-    echo 'Usage: ./install.sh <kernel directory>'
-    echo
-    echo 'Where <kernel directory> is the location the jar file'
-    echo 'will be installed to and must already exist.'
-    exit 1
-fi
-set -u
-
-mkdir $NAME
-cat kernel.json | sed \"s|__PATH__|\$1/$JAR|\" > $NAME/kernel.json
-cp $JAR \$1
-jupyter kernelspec install --replace --name groovy $NAME
-rm -rf $NAME" > $DIST/install.sh
+cat install-template.sh | sed "s/__VERSION__/$VERSION/" > $DIST/install.sh
 chmod ug+x $DIST/install.sh
 
 cd $TARGET
