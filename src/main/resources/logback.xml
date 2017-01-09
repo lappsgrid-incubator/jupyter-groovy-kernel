@@ -7,7 +7,7 @@
 			ch.qos.logback.classic.encoder.PatternLayoutEncoder by default
 		-->
 		<encoder>
-			<pattern>%date %-5level [%class{0}.%M:%line] %msg%n</pattern>
+			<pattern>%date %-5level %-10logger{0} [%class{0}.%M:%line] %msg%n</pattern>
 		</encoder>
 	</appender>
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
@@ -18,7 +18,8 @@
 		<file>jupyter-groovy-kernel.log</file>
 	</appender>
 
-	<logger name="org.lappsgrid.jupyter.groovy" level="debug"/>
+	<logger name="org.lappsgrid.jupyter.groovy" level="info"/>
+	<logger name="org.lappsgrid.jupyter.groovy.GroovyKernel" level="info"/>
 	<root level="warn">
 		<appender-ref ref="FILE" />
 		<appender-ref ref="STDOUT"/>

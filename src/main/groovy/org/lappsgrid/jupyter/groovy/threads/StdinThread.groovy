@@ -28,12 +28,12 @@ import org.zeromq.ZMQ
  * @author Keith Suderman
  */
 class StdinThread extends AbstractThread {
-    public static final Logger logger = LoggerFactory.getLogger(StdinThread)
+//    public static final Logger logger = LoggerFactory.getLogger(StdinThread)
 
     boolean enabled = false
 
     public StdinThread(ZMQ.Socket socket, GroovyKernel kernel) {
-        super(socket, kernel)
+        super(socket, kernel, org.lappsgrid.jupyter.groovy.threads.StdinThread.class)
     }
 
     // TODO: Not sure what to do with this yet.

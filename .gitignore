@@ -4,6 +4,8 @@
 *.tgz
 target
 VERSION
-src/java/main/**/Version.java
+src/main/java/org/lappsgrid/jupyter/groovy/Version.java
 groovy-kernel.properties
 jupyter-groovy-kernel
+src/docker/*.jar
+src/docker/kernel.json

@@ -28,21 +28,37 @@ import org.zeromq.ZMQ
  * @author Keith Suderman
  */
 class ShellThread extends AbstractThread {
-    public static Logger logger = LoggerFactory.getLogger(ShellThread)
-
-    public ShellThread(ZMQ.Socket socket, GroovyKernel kernel) {
-        super(socket, kernel)
+    ShellThread(ZMQ.Socket socket, GroovyKernel kernel) {
+        super(socket, kernel, ShellThread)
     }
 
     public void run() {
+        logger.info('ShellThread starting.')
+        ZMQ.Poller poller = new ZMQ.Poller(1)
+        poller.register(socket, ZMQ.Poller.POLLIN)
         while (running) {
-            Message message = readMessage()
-            IHandler handler = kernel.getHandler(message.type())
-            if (handler) {
-                handler.handle(message)
+            try {
+                if (poller.poll(0)) {
+                    Message message = readMessage()
+                    IHandler handler = kernel.getHandler(message.type())
+                    if (handler) {
+                        logger.debug("Handling message type {}", message.type())
+                        handler.handle(message)
+                    }
+                    else {
+                        logger.warn("Unhandled message type: {}", message.type())
+                    }
+                }
+                else {
+                    logger.trace("zzzz")
+                    sleep(1000) {
+                        true
+                    }
+                }
             }
-            else {
-                logger.warn("Unhandled message type: {}", message.type())
+            catch (Throwable t) {
+                running = false
+                logger.warn("Exception in ShellThread.", t)
             }
         }
         logger.info("ShellThread shutdown.")

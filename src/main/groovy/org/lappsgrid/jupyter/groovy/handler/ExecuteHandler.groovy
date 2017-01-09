@@ -19,6 +19,7 @@ package org.lappsgrid.jupyter.groovy.handler
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.lappsgrid.jupyter.groovy.GroovyKernel
+import org.lappsgrid.jupyter.groovy.Version
 import org.lappsgrid.jupyter.groovy.msg.Header
 import org.lappsgrid.jupyter.groovy.msg.Message
 import org.slf4j.LoggerFactory
@@ -43,6 +44,7 @@ class ExecuteHandler extends AbstractHandler {
         logger = LoggerFactory.getLogger(ExecuteHandler)
         executionCount = 0
         binding = new Binding()
+        binding.setVariable('version', version())
         CompilerConfiguration configuration = kernel.context.getCompilerConfiguration()
         compiler = new GroovyShell(this.class.classLoader, binding, configuration)
     }
@@ -103,6 +105,10 @@ class ExecuteHandler extends AbstractHandler {
                 //println stdinMsg.asJson()
                 return stdinMsg.content.value
             }
+            meta.version = {
+                version()
+            }
+
             meta.initialize()
             script.metaClass = meta
             logger.trace("code compiled")
@@ -124,7 +130,8 @@ class ExecuteHandler extends AbstractHandler {
             publish(reply)
         }
         catch (Exception e) {
-            logger.error('Unable to execute code block.', e)
+            logger.error('Unable to execute code block')
+            logger.error(e.message)
             error = e
             reply.header = new Header(STREAM, message)
             reply.content = [
@@ -163,5 +170,14 @@ class ExecuteHandler extends AbstractHandler {
             reply.content.user_expressions = [:]
         }
         send(reply)
+    }
+
+    String version() {
+        return """
+Groovy Jupyter Kernel v${Version.version}
+Copyright 2017 The Language Application Grid
+Distributed under the Apache 2.0 License
+See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more information.
+"""
     }
 }
