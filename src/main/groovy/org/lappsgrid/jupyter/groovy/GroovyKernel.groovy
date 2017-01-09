@@ -28,6 +28,7 @@ import org.lappsgrid.jupyter.groovy.json.Serializer
 import org.lappsgrid.jupyter.groovy.msg.Header
 import org.lappsgrid.jupyter.groovy.msg.Message
 import org.lappsgrid.jupyter.groovy.security.HmacSigner
+import org.lappsgrid.jupyter.groovy.threads.AbstractThread
 import org.lappsgrid.jupyter.groovy.threads.ControlThread
 import org.lappsgrid.jupyter.groovy.threads.HeartbeatThread
 import org.lappsgrid.jupyter.groovy.threads.ShellThread
@@ -71,7 +72,7 @@ class GroovyKernel {
     /** Message handlers. All sockets listeners will dispatch to these handlers. */
     Map<String, IHandler> handlers
 
-    /** Used to configure the Groovy compiler when code needs to be compiled. */
+    /** Used to configure the Groovy compiler when user code needs to be compiled. */
     GroovyContext context
 
     // The sockets the kernel listens to.
@@ -132,7 +133,10 @@ class GroovyKernel {
             help_links: []
         ]
     }
-    void shutdown() { running = false }
+
+    void shutdown() {
+        running = false
+    }
 
     static String uuid() {
         return UUID.randomUUID()
@@ -184,6 +188,11 @@ class GroovyKernel {
 
     String read(ZMQ.Socket socket) {
         return new String(socket.recv())
+//        }
+//        catch (Exception e) {
+//            logger.warn("Error reading the socket.", e)
+//            return ""
+//        }
     }
 
     public <T> T read(ZMQ.Socket socket, Class<T> theClass) {
@@ -242,8 +251,8 @@ class GroovyKernel {
             message.metadata = parse(metadata, LinkedHashMap)
             message.content = parse(content, LinkedHashMap)
 
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("Invalid hmac exception while converting to HmacSHA256")
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to read the socket.", e)
         }
         return message
     }
@@ -279,11 +288,22 @@ class GroovyKernel {
         stdinSocket = newSocket(ZMQ.ROUTER, configuration.stdin)
         shellSocket = newSocket(ZMQ.ROUTER, configuration.shell)
 
+        List<ZMQ.Socket> sockets = [
+                hearbeatSocket, iopubSocket, controlSocket, stdinSocket, shellSocket
+        ]
+
         // Create all the threads that respond to ZMQ messages.
-        List threads = [
-                new HeartbeatThread(hearbeatSocket, this),
-                new ControlThread(controlSocket, this),
-                new ShellThread(shellSocket, this)
+        HeartbeatThread heartbeatThread = new HeartbeatThread(hearbeatSocket, this)
+        ControlThread controlThread = new ControlThread(controlSocket, this)
+        ShellThread shellThread = new ShellThread(shellSocket, this)
+
+//        List<AbstractThread> threads = [
+//                new HeartbeatThread(hearbeatSocket, this),
+//                new ControlThread(controlSocket, this),
+//                new ShellThread(shellSocket, this)
+//        ]
+        List<AbstractThread> threads = [
+                heartbeatThread, controlThread, shellThread
         ]
         threads*.start()
 
@@ -295,10 +315,21 @@ class GroovyKernel {
 
         // Signal all threads that it is time to stop and then wait for
         // them to finish.
-        logger.info("Shutting down")
+        logger.info("Shutting down.")
+        logger.debug("Halting threads.")
         threads*.halt()
+        logger.debug("Interrupting theads")
+        threads*.interrupt()
+        logger.debug("Joining threads.")
         threads*.join()
-        logger.info("Done")
+
+        // Close the sockets and terminate the context.
+        logger.debug("Closing sockets.")
+        sockets*.close()
+        logger.debug("Terminating the ZMQ.Context")
+        context.term()
+
+        logger.info("Groovy Kernel shutdown complete.")
     }
 
     public static void main(String[] args) {

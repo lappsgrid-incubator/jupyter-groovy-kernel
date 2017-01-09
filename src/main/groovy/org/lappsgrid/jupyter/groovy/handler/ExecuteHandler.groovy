@@ -44,6 +44,7 @@ class ExecuteHandler extends AbstractHandler {
         logger = LoggerFactory.getLogger(ExecuteHandler)
         executionCount = 0
         binding = new Binding()
+        binding.setVariable('version', version())
         CompilerConfiguration configuration = kernel.context.getCompilerConfiguration()
         compiler = new GroovyShell(this.class.classLoader, binding, configuration)
     }
@@ -105,12 +106,7 @@ class ExecuteHandler extends AbstractHandler {
                 return stdinMsg.content.value
             }
             meta.version = {
-                return """
-Groovy Jupyter Kernel v${Version.version}
-Copyright 2017 The Language Application Grid
-Distributed under the Apache 2.0 License
-See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more information.
-"""
+                version()
             }
 
             meta.initialize()
@@ -174,5 +170,14 @@ See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more inform
             reply.content.user_expressions = [:]
         }
         send(reply)
+    }
+
+    String version() {
+        return """
+Groovy Jupyter Kernel v${Version.version}
+Copyright 2017 The Language Application Grid
+Distributed under the Apache 2.0 License
+See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more information.
+"""
     }
 }
