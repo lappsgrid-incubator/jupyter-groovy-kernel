@@ -24,11 +24,17 @@ Building the Groovy Jupyter Kernel project requires Maven 3.x or higher.
 ```bash
 $> git clone https://github.com/lappsgrid-incubator/jupyter-groovy-kernel.git 
 $> cd jupyter-groovy-kernel
-$> mvn package
+$> mvn clean package
 $> ./install.sh <kernel directory>
 ```
 
 Where *&lt;kernel directory&gt;* is a directory where the kernel jar file will be copied and can be any directory on your system.
+
+If you do not have Maven installed you can use the `mvnw` (Linus/OS X) or `mvnw.cmd` (Windows)  [Maven Wrapper](https://github.com/takari/maven-wrapper) scripts to build the project.
+
+```bash
+$> ./mvnw clean package
+```
 
 ### Manually
 
