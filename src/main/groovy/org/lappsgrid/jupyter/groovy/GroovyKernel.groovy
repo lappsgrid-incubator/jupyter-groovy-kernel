@@ -119,7 +119,7 @@ class GroovyKernel {
         return [
             protocol_version: '5.0',
             implementation: 'groovy',
-            implementation_version: '1.0.0',
+            implementation_version: '1.3.0',
             language_info: [
                     name: 'Groovy',
                     version: '2.4.7',
@@ -132,6 +132,15 @@ class GroovyKernel {
             banner: 'Apache Groovy',
             help_links: []
         ]
+    }
+
+    String version() {
+        return """
+Groovy Jupyter Kernel v${Version.version}
+Copyright 2017 The Language Application Grid
+Distributed under the Apache 2.0 License
+See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more information.
+"""
     }
 
     void shutdown() {

@@ -18,7 +18,7 @@
 		<file>jupyter-groovy-kernel.log</file>
 	</appender>
 
-	<logger name="org.lappsgrid.jupyter.groovy" level="info"/>
+	<logger name="org.lappsgrid.jupyter.groovy" level="warn"/>
 	<logger name="org.lappsgrid.jupyter.groovy.GroovyKernel" level="info"/>
 	<root level="warn">
 		<appender-ref ref="FILE" />

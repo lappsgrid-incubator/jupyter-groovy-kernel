@@ -31,6 +31,8 @@ function usage {
     echo "    ./build [-n|--name <KERNEL_NAME>] [-g|--group <KERNEL_GROUP>]"
     echo
     bold "OPTIONS"
+    echo "    -nc | --no-cache"
+    echo "        Runs the Docker build with the --no-cache option."
     echo "    -n | --name"
     echo "        Specifies the kernel name. Default is jupyter-groovy-kernel."
     echo "    -g | --group"

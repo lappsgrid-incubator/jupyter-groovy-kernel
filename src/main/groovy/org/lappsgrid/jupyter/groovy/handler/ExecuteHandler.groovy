@@ -131,7 +131,7 @@ class ExecuteHandler extends AbstractHandler {
         }
         catch (Exception e) {
             logger.error('Unable to execute code block')
-            logger.error(e.message)
+            logger.debug(e)
             error = e
             reply.header = new Header(STREAM, message)
             reply.content = [
@@ -173,11 +173,6 @@ class ExecuteHandler extends AbstractHandler {
     }
 
     String version() {
-        return """
-Groovy Jupyter Kernel v${Version.version}
-Copyright 2017 The Language Application Grid
-Distributed under the Apache 2.0 License
-See https://github.com/lappsgrid-incubator/jupyter-groovy-kernel for more information.
-"""
+        return kernel.version()
     }
 }
