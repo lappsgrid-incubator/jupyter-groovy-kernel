@@ -41,26 +41,30 @@ There are a number of steps required to complete a new release:
 1. Upate the master branch on GitHub and create a Git tag of the current state of master.
 
 
-### Git 
+### Git Flow
 
 While not strictly required, these instructions assume you are using [Git Flow](https://github.com/nvie/gitflow) to handle the Git branching, merging and tagging.  If you don't or can't use Git Flow simply create a "release branch" for performing the release tasks and then merge the release branch into *master* when finished. Don't forget to *tag* the version on GitHub as part of the release if not using Git Flow.
 
 ```bash
-git flow release start v1.2.0
+git flow release start 1.2.0
 ...work...work...work...
 git commit -a -m "Release ready."
-git flow release finish v1.2.0
+git flow release finish 1.2.0
 ```
 -or-
 ```bash
-git checkout -b v1.2.0
-...work...work...work...
+git checkout -b 1.2.0
+...work...work...work...]
+git commit -a -m "Release ready."
 git checkout master
-git merge v1.2.0
-git branch -d v1.2.0
+git merge 1.2.0
+git push origin master
+git branch -d 1.2.0
 git tag -a -m "Release v1.2.0"
+git push --tags
 git checkout develop
 git merge master
+git push origin develop
 ```
 
 After the release branch has been created either use the Maven Versions plugin to change the version number in the pom.xml file or edit the file manually. 
@@ -71,7 +75,7 @@ mvn versions:set -DnewVersion=1.2.0 -DgenerateBackupPoms=false
  
 ### Docker
  
-The `build.sh` script used to generate the Docker images does N things:
+The `build.sh` script used to generate the Docker images does four things:
 
 1. Gets a copy of the most current JAR file.
 1. Creates a kernel.json file that references the current JAR.
