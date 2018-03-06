@@ -114,7 +114,7 @@ class ExecuteHandler extends AbstractHandler {
             logger.trace("code compiled")
             Object result = script.run()
             logger.trace("Ran script")
-            if (!result) {
+            if (result == null) {
                 result = 'Cell returned null.'
             }
             ++executionCount
