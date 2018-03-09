@@ -2,7 +2,7 @@
 
 A native [Jupyter](http://jupyter.org) kernel for the [Apache Groovy](http://www.groovy-lang.org) language. By "native" we mean the kernel is written in Groovy and handles the ZeroMQ message queues directly.
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lappsgrid.jupyter/jupyter-groovy-kernel/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/org.lappsgrid/discriminators)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lappsgrid.jupyter/jupyter-groovy-kernel/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/org.lappsgrid.jupyter/jupyter-groovy-kernel)
 
 ## Contents
 
