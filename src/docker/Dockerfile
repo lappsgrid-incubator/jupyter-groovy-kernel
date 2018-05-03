@@ -13,6 +13,7 @@ COPY $JAR $KERNEL_DIR/$JAR
 COPY kernel.json $KERNEL_DIR/kernel.json
 RUN jupyter kernelspec install --name groovy $KERNEL_DIR
 
-VOLUME ["/home/jovyan/work"]
-WORKDIR /home/jovyan/work
-CMD ["jupyter", "notebook"]
+# Fix: Permission denied: '/home/jovyan/.local/share'
+RUN chown -R $NB_UID /home/jovyan/.local
+
+USER $NB_UID
